@@ -40,8 +40,11 @@ RUN touch /etc/bash_completion.d/R;cp /etc/bash_completion.d/R /usr/share/bash-c
 #Installing R packages, and the ruby gem for protk
 RUN R -e "install.packages(c('gplots','lme4','ggplot2','ggrepel','reshape','reshape2','data.table','rjson','Rcpp','survival','minpack.lm'),repos='https://cran.rstudio.com/',dependencies=TRUE)" && \
     gem install protk -v 1.4.2 && \
-    R -e "source('https://bioconductor.org/biocLite.R');biocLite(c('limma','marray','preprocessCore','MSnbase'),ask=FALSE)" && \
-    wget "https://bioconductor.org/packages/release/bioc/src/contrib/MSstats_3.8.0.tar.gz";R -e "install.packages('MSstats_3.8.0.tar.gz',type='source', repos=NULL)"
+    R -e "source('https://bioconductor.org/biocLite.R');biocLite(c('limma','marray','preprocessCore','MSnbase'),ask=FALSE)"
+
+COPY MSstats_3.8.0.tar.gz MSstats_3.8.0.tar.gz
+RUN R -e "install.packages('MSstats_3.8.0.tar.gz',type='source', repos=NULL)"
+#wget "https://bioconductor.org/packages/release/bioc/src/contrib/MSstats_3.8.0.tar.gz";R -e "install.packages('MSstats_3.8.0.tar.gz',type='source', repos=NULL)"
 #Installing proteowizard...
 COPY pwiz-bin-linux-x86_64-gcc48-release-3_0_10738.tar.bz2 /bin/pwiz.tar.bz2
 RUN cd /bin/ && tar xvfj pwiz.tar.bz2 && rm pwiz.tar.bz2
