@@ -54,7 +54,7 @@ RUN git clone https://github.com/crux-toolkit/crux-toolkit.git crux-toolkit;cd c
 env PATH $PATH:/home/galaxy/crux/bin/
 
 #Installing Milkyway tools/configurations...
-RUN echo '09-08-2017' && git clone https://github.com/wohllab/milkyway_proteomics.git --branch master
+RUN echo '09-08-2017b' && git clone https://github.com/wohllab/milkyway_proteomics.git --branch master
 RUN mv milkyway_proteomics/galaxy_milkyway_files/tool-data/msgfplus_mods.loc $GALAXY_ROOT/tool-data/msgfplus_mods.loc;mv milkyway_proteomics/galaxy_milkyway_files/tool-data/silac_mods.loc $GALAXY_ROOT/tool-data/silac_mods.loc;mv milkyway_proteomics/galaxy_milkyway_files/tools/wohl-proteomics/ $GALAXY_ROOT/tools/wohl-proteomics/
 RUN mv milkyway_proteomics/galaxy_milkyway_files/config/wohl_tool_conf.xml /home/galaxy/wohl_tool_conf.xml
 
@@ -156,6 +156,11 @@ sudo apt-get install --install-recommends winehq-stable -y
 
 #add-apt-repository ppa:wine/wine-builds && \
 
+
+
+#We need to grab the phosphoRS dll file and unpack it...
+RUN mkdir phosphotemp && cd phosphotemp && wget http://ms.imp.ac.at/inc/pd-nodes/phosphors/phosphoRS3.1%20Node%20PD1.3.zip && unzip phosphoRS* && cp IMP.PhosphoRS.dll /galaxy-central/tools/wohl-proteomics/RSmax/IMP.PhosphoRS.dll && \
+    cd ../ && rm -rf phosphotemp
 
 
 #Patch listed in https://github.com/galaxyproject/pulsar/issues/125 for directory issues...
