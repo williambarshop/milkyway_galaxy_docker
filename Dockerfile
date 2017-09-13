@@ -34,7 +34,7 @@ RUN gpg --keyserver hkp://keyserver.ubuntu.com --recv-keys 409B6B1796C275462A170
 RUN apt-get install build-essential cmake autoconf patch libtool automake qt4-default libqtwebkit-dev libeigen3-dev libxerces-c-dev libboost-all-dev libsvn-dev libbz2-dev -y
 RUN wget https://sourceforge.net/projects/open-ms/files/OpenMS/OpenMS-2.1/OpenMS-2.1.0_src_contrib_doc.tar.gz/download && tar xzvf download && rm download && cd OpenMS-2.1.0/ && mkdir contrib-build && cd contrib-build && cmake -DBUILD_TYPE=ALL -DNUMBER_OF_JOBS=4 ../contrib && \
 	cd / && mkdir OpenMS-build && cd OpenMS-build && cmake -DCMAKE_PREFIX_PATH="/galaxy-central/OpenMS-2.1.0/contrib-build;/usr;/usr/local" -DBOOST_USE_STATIC=OFF /galaxy-central/OpenMS-2.1.0/ && make && echo "export LD_LIBRARY_PATH='/OpenMS-build/lib:$LD_LIBRARY_PATH'" >> $HOME/.bashrc
-env PATH /usr/local/rvm/rubies/ruby-2.4.0/bin:/OpenMS-build/bin:$PATH
+env PATH /usr/local/rvm/rubies/ruby-2.4.1/bin:/OpenMS-build/bin:$PATH
 env LD_LIBRARY_PATH /OpenMS-build/lib:$LD_LIBRARY_PATH
 
 
