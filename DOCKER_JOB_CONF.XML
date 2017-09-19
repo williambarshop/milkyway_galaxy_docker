@@ -2,7 +2,7 @@
 <job_conf>
     <plugins workers="4">
     <!-- The default handler can be changed by specifying the GALAXY_HANDLERS_DEFAULT environment variable. -->
-	<plugin id="local" type="runner" load="galaxy.jobs.runners.local:LocalJobRunner" workers="6"/>
+	<plugin id="local" type="runner" load="galaxy.jobs.runners.local:LocalJobRunner" workers="5"/>
         <plugin id="pulsar" type="runner" load="galaxy.jobs.runners.pulsar:PulsarLegacyJobRunner" workers="3"/>
     </plugins>
 
