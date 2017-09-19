@@ -58,7 +58,7 @@ RUN git clone https://github.com/crux-toolkit/crux-toolkit.git crux-toolkit;cd c
 env PATH $PATH:/home/galaxy/crux/bin/
 
 #Installing Milkyway tools/configurations...
-RUN echo '09-13-2017' && git clone https://github.com/wohllab/milkyway_proteomics.git --branch master
+RUN echo '09-19-2017' && git clone https://github.com/wohllab/milkyway_proteomics.git --branch master
 RUN mv milkyway_proteomics/galaxy_milkyway_files/tool-data/msgfplus_mods.loc $GALAXY_ROOT/tool-data/msgfplus_mods.loc;mv milkyway_proteomics/galaxy_milkyway_files/tool-data/silac_mods.loc $GALAXY_ROOT/tool-data/silac_mods.loc;mv milkyway_proteomics/galaxy_milkyway_files/tools/wohl-proteomics/ $GALAXY_ROOT/tools/wohl-proteomics/
 RUN mv milkyway_proteomics/galaxy_milkyway_files/config/wohl_tool_conf.xml /home/galaxy/wohl_tool_conf.xml
 
