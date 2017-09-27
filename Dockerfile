@@ -58,7 +58,7 @@ RUN git clone https://github.com/crux-toolkit/crux-toolkit.git crux-toolkit;cd c
 env PATH $PATH:/home/galaxy/crux/bin/
 
 #Installing Milkyway tools/configurations...
-RUN echo '09-19-2017' && git clone https://github.com/wohllab/milkyway_proteomics.git --branch master
+RUN echo '09-27a-2017' && git clone https://github.com/wohllab/milkyway_proteomics.git --branch master
 RUN mv milkyway_proteomics/galaxy_milkyway_files/tool-data/msgfplus_mods.loc $GALAXY_ROOT/tool-data/msgfplus_mods.loc;mv milkyway_proteomics/galaxy_milkyway_files/tool-data/silac_mods.loc $GALAXY_ROOT/tool-data/silac_mods.loc;mv milkyway_proteomics/galaxy_milkyway_files/tools/wohl-proteomics/ $GALAXY_ROOT/tools/wohl-proteomics/
 RUN mv milkyway_proteomics/galaxy_milkyway_files/config/wohl_tool_conf.xml /home/galaxy/wohl_tool_conf.xml
 
@@ -98,7 +98,7 @@ RUN install-tools $GALAXY_ROOT/proteomics_toolshed.yml
 #Let's set up DIA-Umpire
 RUN cd /galaxy-central/tools/wohl-proteomics/diaumpire/ ; wget https://github.com/Nesvilab/DIA-Umpire/releases/download/v2.1.2/v2.1.2.zip ; unzip v2.1.2.zip ; rm v2.1.2.zip
 #We'll need the ptmRS dll file...
-RUN wget http://ms.imp.ac.at/files/ptmrs_2_x.zip; unzip ptmrs_2_x.zip;mv IMP.ptmRS.dll /galaxy-central/tools/wohl-proteomics/ptmRSmax/;rm IMP.ptmRSNode.dll;rm IMP.ptmRSConf.xml;rm ptmrs_2_x.zip
+RUN wget http://ms.imp.ac.at/data/ptmrs/ptmrs_2_x.zip; unzip ptmrs_2_x.zip;mv IMP.ptmRS.dll /galaxy-central/tools/wohl-proteomics/ptmRSmax/;rm IMP.ptmRSNode.dll;rm IMP.ptmRSConf.xml;rm ptmrs_2_x.zip
 
 #Set up for galaxy XML files...
 RUN cp /galaxy-central/config/dependency_resolvers_conf.xml.sample /galaxy-central/config/dependency_resolvers_conf.xml
