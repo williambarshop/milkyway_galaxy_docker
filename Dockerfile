@@ -58,7 +58,7 @@ RUN git clone https://github.com/crux-toolkit/crux-toolkit.git crux-toolkit;cd c
 env PATH $PATH:/home/galaxy/crux/bin/
 
 #Installing Milkyway tools/configurations...
-RUN echo '09-27a-2017' && git clone https://github.com/wohllab/milkyway_proteomics.git --branch master
+RUN echo '09-28-2017' && git clone https://github.com/wohllab/milkyway_proteomics.git --branch master
 RUN mv milkyway_proteomics/galaxy_milkyway_files/tool-data/msgfplus_mods.loc $GALAXY_ROOT/tool-data/msgfplus_mods.loc;mv milkyway_proteomics/galaxy_milkyway_files/tool-data/silac_mods.loc $GALAXY_ROOT/tool-data/silac_mods.loc;mv milkyway_proteomics/galaxy_milkyway_files/tools/wohl-proteomics/ $GALAXY_ROOT/tools/wohl-proteomics/
 RUN mv milkyway_proteomics/galaxy_milkyway_files/config/wohl_tool_conf.xml /home/galaxy/wohl_tool_conf.xml
 
@@ -100,6 +100,10 @@ RUN cd /galaxy-central/tools/wohl-proteomics/diaumpire/ ; wget https://github.co
 #We'll need the ptmRS dll file...
 RUN wget http://ms.imp.ac.at/data/ptmrs/ptmrs_2_x.zip; unzip ptmrs_2_x.zip;mv IMP.ptmRS.dll /galaxy-central/tools/wohl-proteomics/ptmRSmax/;rm IMP.ptmRSNode.dll;rm IMP.ptmRSConf.xml;rm ptmrs_2_x.zip
 
+#Let's get MSPLIT-DIA
+RUN cd /galaxy-central/tools/wohl-proteomics/msplit-dia/ ; wget http://proteomics.ucsd.edu/Software/MSPLIT-DIA/MSPLIT-DIAv1.0.zip; unzip MSPLIT-DIAv1.0.zip ; rm MSPLIT-DIAv1.0.zip ; mv MSPLIT-DIAv1.0/* . ; rm -rf MSPLIT-DIAv1.0
+ADD MSPLIT-DIAv07192015.jar /galaxy-central/tools/wohl-proteomics/msplit-dia/
+
 #Set up for galaxy XML files...
 RUN cp /galaxy-central/config/dependency_resolvers_conf.xml.sample /galaxy-central/config/dependency_resolvers_conf.xml
 
@@ -132,7 +136,8 @@ RUN startup_lite && \
     python /galaxy-central/replace_workflow_id.py --apikey admin --galaxy_address 127.0.0.1:8080 --workflow_folder /galaxy-central/milkyway_proteomics/workflows/ --old_tool_string DecoyDatabase && \
     python /galaxy-central/patch_msconvert.py --apikey admin --galaxy_address 127.0.0.1:8080 --tool_string msconvert_win && \
     workflow-install --workflow_path /galaxy-central/milkyway_proteomics/workflows/ -g http://localhost:8080 -u admin@galaxy.org -p admin
-RUN . "$GALAXY_VIRTUAL_ENV/bin/activate" && pip install https://pypi.python.org/packages/de/db/7df2929ee9fad94aa9e57071bbca246a42069c0307305e00ce3f2c5e0c1d/pyopenms-2.1.0-cp27-none-manylinux1_x86_64.whl#md5=3c886f9bb4a2569c0d3c8fe29fbff5e1 && pip install uniprot_tools h5py ephemeris futures tqdm joblib multiprocessing pandas argparse pymzml pyteomics==3.2 natsort tqdm biopython lxml Orange-Bioinformatics -U
+RUN . "$GALAXY_VIRTUAL_ENV/bin/activate" && pip install cython && pip install https://pypi.python.org/packages/de/db/7df2929ee9fad94aa9e57071bbca246a42069c0307305e00ce3f2c5e0c1d/pyopenms-2.1.0-cp27-none-manylinux1_x86_64.whl#md5=3c886f9bb4a2569c0d3c8fe29fbff5e1 && pip install uniprot_tools h5py ephemeris futures tqdm joblib multiprocessing pandas argparse pyteomics==3.2 natsort tqdm biopython lxml plotly Orange-Bioinformatics -U \
+    && git clone https://github.com/pymzml/pymzML.git && cd pymzML && python setup.py install && cd .. && rm -rf pymzML
 
 
 #Installing wine....
@@ -163,7 +168,7 @@ sudo apt-get install --install-recommends winehq-stable -y
 
 
 #We need to grab the phosphoRS dll file and unpack it...
-RUN mkdir phosphotemp && cd phosphotemp && wget http://ms.imp.ac.at/inc/pd-nodes/phosphors/phosphoRS3.1%20Node%20PD1.3.zip && unzip phosphoRS* && cp IMP.PhosphoRS.dll /galaxy-central/tools/wohl-proteomics/RSmax/IMP.PhosphoRS.dll && \
+RUN mkdir phosphotemp && cd phosphotemp && curl -L http://ms.imp.ac.at/index.php?file=phosphors/phosphors-1_3.zip > phosphoRS.zip && unzip phosphoRS.zip && cp IMP.PhosphoRS.dll /galaxy-central/tools/wohl-proteomics/RSmax/IMP.PhosphoRS.dll && \
     cd ../ && rm -rf phosphotemp
 
 
