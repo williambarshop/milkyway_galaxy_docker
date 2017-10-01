@@ -46,9 +46,10 @@ RUN ["/bin/bash","-c","source /usr/local/rvm/scripts/rvm && gem install protk -v
 RUN R -e "install.packages(c('gplots','lme4','ggplot2','ggrepel','reshape','reshape2','data.table','rjson','Rcpp','survival','minpack.lm'),repos='https://cran.rstudio.com/',dependencies=TRUE)" && \
     R -e "source('https://bioconductor.org/biocLite.R');biocLite(c('limma','marray','preprocessCore','MSnbase'),ask=FALSE)"
 
-COPY MSstats_3.8.0.tar.gz MSstats_3.8.0.tar.gz
-RUN R -e "install.packages('MSstats_3.8.0.tar.gz',type='source', repos=NULL)"
-#wget "https://bioconductor.org/packages/release/bioc/src/contrib/MSstats_3.8.0.tar.gz";R -e "install.packages('MSstats_3.8.0.tar.gz',type='source', repos=NULL)"
+#COPY MSstats_3.8.0.tar.gz MSstats_3.8.0.tar.gz
+
+#RUN R -e "install.packages('MSstats_3.8.0.tar.gz',type='source', repos=NULL)"
+wget "http://msstats.org/wp-content/uploads/2017/09/MSstats_3.9.2.tar.gz";R -e "install.packages('MSstats_3.9.2.tar.gz',type='source', repos=NULL)"; rm MSstats_3.9.2.tar.gz
 #Installing proteowizard...
 COPY pwiz-bin-linux-x86_64-gcc48-release-3_0_10738.tar.bz2 /bin/pwiz.tar.bz2
 RUN cd /bin/ && tar xvfj pwiz.tar.bz2 && rm pwiz.tar.bz2
@@ -58,7 +59,7 @@ RUN git clone https://github.com/crux-toolkit/crux-toolkit.git crux-toolkit;cd c
 env PATH $PATH:/home/galaxy/crux/bin/
 
 #Installing Milkyway tools/configurations...
-RUN echo '09-28-2017' && git clone https://github.com/wohllab/milkyway_proteomics.git --branch master
+RUN echo '09-29c-2017' && git clone https://github.com/wohllab/milkyway_proteomics.git --branch master
 RUN mv milkyway_proteomics/galaxy_milkyway_files/tool-data/msgfplus_mods.loc $GALAXY_ROOT/tool-data/msgfplus_mods.loc;mv milkyway_proteomics/galaxy_milkyway_files/tool-data/silac_mods.loc $GALAXY_ROOT/tool-data/silac_mods.loc;mv milkyway_proteomics/galaxy_milkyway_files/tools/wohl-proteomics/ $GALAXY_ROOT/tools/wohl-proteomics/
 RUN mv milkyway_proteomics/galaxy_milkyway_files/config/wohl_tool_conf.xml /home/galaxy/wohl_tool_conf.xml
 
