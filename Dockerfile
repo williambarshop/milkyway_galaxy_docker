@@ -49,7 +49,7 @@ RUN R -e "install.packages(c('gplots','lme4','ggplot2','ggrepel','reshape','resh
 #COPY MSstats_3.8.0.tar.gz MSstats_3.8.0.tar.gz
 
 #RUN R -e "install.packages('MSstats_3.8.0.tar.gz',type='source', repos=NULL)"
-wget "http://msstats.org/wp-content/uploads/2017/09/MSstats_3.9.2.tar.gz";R -e "install.packages('MSstats_3.9.2.tar.gz',type='source', repos=NULL)"; rm MSstats_3.9.2.tar.gz
+RUN wget "http://msstats.org/wp-content/uploads/2017/09/MSstats_3.9.2.tar.gz";R -e "install.packages('MSstats_3.9.2.tar.gz',type='source', repos=NULL)"; rm MSstats_3.9.2.tar.gz
 #Installing proteowizard...
 COPY pwiz-bin-linux-x86_64-gcc48-release-3_0_10738.tar.bz2 /bin/pwiz.tar.bz2
 RUN cd /bin/ && tar xvfj pwiz.tar.bz2 && rm pwiz.tar.bz2
