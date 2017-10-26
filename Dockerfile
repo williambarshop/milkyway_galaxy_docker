@@ -65,7 +65,7 @@ RUN git clone https://github.com/crux-toolkit/crux-toolkit.git crux-toolkit;cd c
 env PATH $PATH:/home/galaxy/crux/bin/
 
 #Installing Milkyway tools/configurations...
-RUN echo '10-09-2017 #happy birthday, Kana!' && git clone https://github.com/wohllab/milkyway_proteomics.git --branch master
+RUN echo '10-21-2017' && git clone https://github.com/wohllab/milkyway_proteomics.git --branch master
 RUN mv milkyway_proteomics/galaxy_milkyway_files/tool-data/msgfplus_mods.loc $GALAXY_ROOT/tool-data/msgfplus_mods.loc;mv milkyway_proteomics/galaxy_milkyway_files/tool-data/silac_mods.loc $GALAXY_ROOT/tool-data/silac_mods.loc;mv milkyway_proteomics/galaxy_milkyway_files/tools/wohl-proteomics/ $GALAXY_ROOT/tools/wohl-proteomics/
 RUN mv milkyway_proteomics/galaxy_milkyway_files/config/wohl_tool_conf.xml /home/galaxy/wohl_tool_conf.xml
 
@@ -144,7 +144,7 @@ RUN startup_lite && \
     python /galaxy-central/patch_msconvert.py --apikey admin --galaxy_address 127.0.0.1:8080 --tool_string msconvert_win && \
     workflow-install --workflow_path /galaxy-central/milkyway_proteomics/workflows/ -g http://localhost:8080 -u admin@galaxy.org -p admin
 RUN . "$GALAXY_VIRTUAL_ENV/bin/activate" && pip install cython && pip install https://pypi.python.org/packages/de/db/7df2929ee9fad94aa9e57071bbca246a42069c0307305e00ce3f2c5e0c1d/pyopenms-2.1.0-cp27-none-manylinux1_x86_64.whl#md5=3c886f9bb4a2569c0d3c8fe29fbff5e1 && pip install uniprot_tools h5py ephemeris futures tqdm joblib multiprocessing pandas argparse pyteomics==3.2 natsort tqdm biopython lxml plotly Orange-Bioinformatics -U \
-    && git clone https://github.com/pymzml/pymzML.git && cd pymzML && python setup.py install && cd .. && rm -rf pymzML && curl -L https://github.com/HUPO-PSI/psi-ms-CV/blob/70f52d15700fd8e95a6c6e6f1ef6c5a5ab90f27c/psi-ms.obo > /galaxy_venv/local/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.14.obo
+    && git clone https://github.com/pymzml/pymzML.git && cd pymzML && python setup.py install && cd .. && rm -rf pymzML && curl -L https://raw.githubusercontent.com/HUPO-PSI/psi-ms-CV/master/psi-ms.obo > /galaxy_venv/local/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.14.obo
 
 
 #Installing wine....
