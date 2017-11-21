@@ -51,3 +51,8 @@ tools:
   revision: 8ced1ef014ae
   tool_shed_url: https://toolshed.g2.bx.psu.edu
 
+- name: proteomics_datatypes
+  owner: iracooke
+  tool_panel_section_label: "Galaxy-Proteomics"
+  revision: 300fc3aa6954
+  tool_shed_url: https://toolshed.g2.bx.psu.edu
