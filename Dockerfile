@@ -80,7 +80,7 @@ rm -rf proteowizard-code/
 
 
 #Installing Milkyway tools/configurations...
-RUN echo '3-19-2018' && git clone https://github.com/wohllab/milkyway_proteomics.git --branch master
+RUN echo '3-20-2018b' && git clone https://github.com/wohllab/milkyway_proteomics.git --branch master
 RUN mv milkyway_proteomics/galaxy_milkyway_files/tool-data/msgfplus_mods.loc $GALAXY_ROOT/tool-data/msgfplus_mods.loc;mv milkyway_proteomics/galaxy_milkyway_files/tool-data/silac_mods.loc $GALAXY_ROOT/tool-data/silac_mods.loc && \
 apt-get update && \
 apt-get install rsync -y && \
