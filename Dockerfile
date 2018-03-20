@@ -64,10 +64,41 @@ RUN cd /bin/ && tar xvfj pwiz.tar.bz2 && rm pwiz.tar.bz2
 RUN git clone https://github.com/crux-toolkit/crux-toolkit.git crux-toolkit;cd crux-toolkit;cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:PATH=~/crux/;make;make install
 env PATH $PATH:/home/galaxy/crux/bin/
 
+#SET UP BLIBBUILD
+#RUN wget http://teamcity.labkey.org:8080/guestAuth/repository/download/bt17/547313:id/pwiz-bin-linux-x86_64-gcc48-release-3_0_11799.tar.bz2 && mv pwiz-bin-linux-x86_64-gcc48-release-3_0_11799.tar.bz2 pwiz.tar.bz2 && \
+#tar xvfj pwiz.tar.bz2 && \
+RUN mkdir /galaxy-central/tools/wohl-proteomics/ && \
+mkdir /galaxy-central/tools/wohl-proteomics/ssl_converter/ && \
+svn checkout https://svn.code.sf.net/p/proteowizard/code/trunk/pwiz proteowizard-code && \
+cd proteowizard-code/ && \
+sh quickbuild.sh -j8 optimization=space address-model=64 pwiz_tools/BiblioSpec && \
+mkdir /galaxy-central/tools/wohl-proteomics/ssl_converter/blibbuild && \
+cp build-linux-x86_64/BiblioSpec/* /galaxy-central/tools/wohl-proteomics/ssl_converter/blibbuild/ && \
+tar xvfj /galaxy-central/tools/wohl-proteomics/ssl_converter/blibbuild/bibliospec*.tar.bz2 && \
+cd .. && \
+rm -rf proteowizard-code/
+
+
 #Installing Milkyway tools/configurations...
-RUN echo '12-06-2017' && git clone https://github.com/wohllab/milkyway_proteomics.git --branch master
-RUN mv milkyway_proteomics/galaxy_milkyway_files/tool-data/msgfplus_mods.loc $GALAXY_ROOT/tool-data/msgfplus_mods.loc;mv milkyway_proteomics/galaxy_milkyway_files/tool-data/silac_mods.loc $GALAXY_ROOT/tool-data/silac_mods.loc;mv milkyway_proteomics/galaxy_milkyway_files/tools/wohl-proteomics/ $GALAXY_ROOT/tools/wohl-proteomics/
+RUN echo '3-19-2018' && git clone https://github.com/wohllab/milkyway_proteomics.git --branch master
+RUN mv milkyway_proteomics/galaxy_milkyway_files/tool-data/msgfplus_mods.loc $GALAXY_ROOT/tool-data/msgfplus_mods.loc;mv milkyway_proteomics/galaxy_milkyway_files/tool-data/silac_mods.loc $GALAXY_ROOT/tool-data/silac_mods.loc && \
+apt-get update && \
+apt-get install rsync -y && \
+rsync -avzh milkyway_proteomics/galaxy_milkyway_files/tools/wohl-proteomics/ $GALAXY_ROOT/tools/wohl-proteomics/
 RUN mv milkyway_proteomics/galaxy_milkyway_files/config/wohl_tool_conf.xml /home/galaxy/wohl_tool_conf.xml
+
+#Now let's move all the tool data from our local machine into the docker image.
+#After that's done, we'll have to take care of a few galaxy configuration XML files...
+#The first is going to be the job_conf xml
+RUN rm $GALAXY_CONFIG_DIR/job_conf.xml
+#COPY DOCKER_JOB_CONF.XML $GALAXY_CONFIG_DIR/job_conf.xml
+RUN mv milkyway_proteomics/galaxy_milkyway_files/config/job_conf.xml $GALAXY_CONFIG_DIR/job_conf.xml
+
+#The second is the tool_conf xml
+#!RUN tail -n -1 $GALAXY_ROOT/config/tool_conf.xml.sample > /home/galaxy/tmp_tool_conf.xml; head -n -1 /home/galaxy/wohl_tool_conf.xml > /home/galaxy/wohl_tool_tmp.xml; tail -n -1 /home/galaxy/wohl_tool_tmp.xml > /home/galaxy/wohl_tool_tmp_final.xml; cat /home/galaxy/wohl_tool_tmp_final.xml >> /home/galaxy/milkyway_tool_conf.xml
+RUN head -n -1 $GALAXY_ROOT/config/tool_conf.xml.sample > /home/galaxy/milkyway_tool_conf.xml; head -n -1 /home/galaxy/wohl_tool_conf.xml > /home/galaxy/wohl_tool_tmp.xml; sed -e "1d" /home/galaxy/wohl_tool_tmp.xml > /home/galaxy/wohl_tool_tmp_final.xml; cat /home/galaxy/wohl_tool_tmp_final.xml >> /home/galaxy/milkyway_tool_conf.xml; echo "</toolbox>" >> /home/galaxy/milkyway_tool_conf.xml; rm /home/galaxy/wohl_tool_tmp.xml; rm /home/galaxy/wohl_tool_tmp_final.xml
+#! cat /home/galaxy/wohl_tool_conf.xml >> /home/galaxy/milkyway_tool_conf.xml
+
 
 #Building Fido...
 RUN wget https://noble.gs.washington.edu/proj/fido/fido.tgz && tar xzvf fido.tgz && rm fido.tgz && cd fido/src/cpp/ && mkdir ../../bin && make && \
@@ -75,14 +106,7 @@ RUN wget https://noble.gs.washington.edu/proj/fido/fido.tgz && tar xzvf fido.tgz
     mv ../../bin/Fido /galaxy-central/tools/wohl-proteomics/fido/Fido && \
     cd ../../../ && rm -rf fido && rm -rf bin
 
-#Now let's move all the tool data from our local machine into the docker image.
-#After that's done, we'll have to take care of a few galaxy configuration XML files...
-RUN rm $GALAXY_CONFIG_DIR/job_conf.xml
-COPY DOCKER_JOB_CONF.XML $GALAXY_CONFIG_DIR/job_conf.xml
 
-#!RUN tail -n -1 $GALAXY_ROOT/config/tool_conf.xml.sample > /home/galaxy/tmp_tool_conf.xml; head -n -1 /home/galaxy/wohl_tool_conf.xml > /home/galaxy/wohl_tool_tmp.xml; tail -n -1 /home/galaxy/wohl_tool_tmp.xml > /home/galaxy/wohl_tool_tmp_final.xml; cat /home/galaxy/wohl_tool_tmp_final.xml >> /home/galaxy/milkyway_tool_conf.xml
-RUN head -n -1 $GALAXY_ROOT/config/tool_conf.xml.sample > /home/galaxy/milkyway_tool_conf.xml; head -n -1 /home/galaxy/wohl_tool_conf.xml > /home/galaxy/wohl_tool_tmp.xml; sed -e "1d" /home/galaxy/wohl_tool_tmp.xml > /home/galaxy/wohl_tool_tmp_final.xml; cat /home/galaxy/wohl_tool_tmp_final.xml >> /home/galaxy/milkyway_tool_conf.xml; echo "</toolbox>" >> /home/galaxy/milkyway_tool_conf.xml; rm /home/galaxy/wohl_tool_tmp.xml; rm /home/galaxy/wohl_tool_tmp_final.xml
-#! cat /home/galaxy/wohl_tool_conf.xml >> /home/galaxy/milkyway_tool_conf.xml
 
 
 #Set up environment variables for galaxy docker...
@@ -123,14 +147,6 @@ RUN curl -L https://sourceforge.net/projects/saint-apms/files/saintq_v0.0.4.tar.
 #SET UP PERCOLATOR CONVERTERS
 RUN wget https://github.com/percolator/percolator/releases/download/rel-3-01/ubuntu64_release.tar.gz && tar xzvf ubuntu64_release.tar.gz && rm ubuntu64_release.tar.gz && dpkg -i percolator-converters-v3-01-linux-amd64.deb && dpkg -i elude-v3-01-linux-amd64.deb && apt-get install -f && rm percolator-converters-v3-01-linux-amd64.deb percolator-noxml-v3-01-linux-amd64.deb percolator-v3-01-linux-amd64.deb elude-v3-01-linux-amd64.deb
 
-#SET UP BLIBBUILD
-RUN svn checkout https://svn.code.sf.net/p/proteowizard/code/trunk proteowizard-code && \
-cd proteowizard-code/pwiz/ && \
-sh quickbuild.sh -j8 optimization=space address-model=64 pwiz_tools/BiblioSpec && \
-mkdir /galaxy-central/tools/wohl-proteomics/ssl_converter/blibbuild && \
-cp build-linux-x86_64/BiblioSpec/* /galaxy-central/tools/wohl-proteomics/ssl_converter/blibbuild/ && \
-tar xvfj /galaxy-central/tools/wohl-proteomics/ssl_converter/blibbuild/bibliospec*.tar.bz2
-
 
 ## INSTALL WORKFLOWS AND TOOLBOX TOOLS INTO GALAXY ##
 #and installing python packages...
@@ -143,8 +159,6 @@ RUN startup_lite && \
     python /galaxy-central/replace_workflow_id.py --apikey admin --galaxy_address 127.0.0.1:8080 --workflow_folder /galaxy-central/milkyway_proteomics/workflows/ --old_tool_string DecoyDatabase && \
     python /galaxy-central/patch_msconvert.py --apikey admin --galaxy_address 127.0.0.1:8080 --tool_string msconvert_win && \
     workflow-install --workflow_path /galaxy-central/milkyway_proteomics/workflows/ -g http://localhost:8080 -u admin@galaxy.org -p admin
-RUN . "$GALAXY_VIRTUAL_ENV/bin/activate" && pip install cython && pip install https://pypi.python.org/packages/de/db/7df2929ee9fad94aa9e57071bbca246a42069c0307305e00ce3f2c5e0c1d/pyopenms-2.1.0-cp27-none-manylinux1_x86_64.whl#md5=3c886f9bb4a2569c0d3c8fe29fbff5e1 && pip install uniprot_tools h5py ephemeris futures tqdm joblib multiprocessing pandas argparse pyteomics==3.2 natsort tqdm biopython lxml plotly Orange-Bioinformatics -U
-RUN . "$GALAXY_VIRTUAL_ENV/bin/activate" && git clone https://github.com/pymzml/pymzML.git && cd pymzML && python setup.py install && cd .. && rm -rf pymzML && curl -L http://ontologies.berkeleybop.org/ms.obo > /galaxy_venv/local/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.14.obo
 
 
 #Installing wine....
@@ -172,6 +186,10 @@ sudo apt-get install --install-recommends winehq-stable -y
 
 #add-apt-repository ppa:wine/wine-builds && \
 
+#INSTALL SOME PYTHON PACKAGES INTO VENV
+RUN . "$GALAXY_VIRTUAL_ENV/bin/activate" && pip install --upgrade pip && pip install cython && pip install https://pypi.python.org/packages/de/db/7df2929ee9fad94aa9e57071bbca246a42069c0307305e00ce3f2c5e0c1d/pyopenms-2.1.0-cp27-none-manylinux1_x86_64.whl#md5=3c886f9bb4a2569c0d3c8fe29fbff5e1 && pip install numpy==1.13.0 uniprot_tools h5py==2.7.0 ephemeris futures tqdm joblib multiprocessing pandas argparse pyteomics==3.2 natsort tqdm biopython lxml plotly Orange-Bioinformatics -U
+#RUN . "$GALAXY_VIRTUAL_ENV/bin/activate" && git clone https://github.com/pymzml/pymzML.git && cd pymzML && python setup.py install && cd .. && rm -rf pymzML && curl -L http://ontologies.berkeleybop.org/ms.obo > /galaxy_venv/local/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.14.obo
+RUN . "$GALAXY_VIRTUAL_ENV/bin/activate" && pip install pymzml==0.7.8 && curl -L http://ontologies.berkeleybop.org/ms.obo > /galaxy_venv/local/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.14.obo
 
 
 #We need to grab the phosphoRS dll file and unpack it...
