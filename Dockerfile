@@ -54,7 +54,6 @@ RUN touch /etc/bash_completion.d/R;cp /etc/bash_completion.d/R /usr/share/bash-c
 RUN ["/bin/bash","-c","source /usr/local/rvm/scripts/rvm && gem install protk -v 1.4.2"]
 RUN R -e "install.packages(c('gplots','lme4','ggplot2','ggrepel','reshape','reshape2','data.table','rjson','Rcpp','survival','minpack.lm'),repos='https://cran.rstudio.com/',dependencies=TRUE)" && \
     R -e "source('https://bioconductor.org/biocLite.R');biocLite(c('limma','marray','preprocessCore','MSnbase'),ask=FALSE)"
-
 #COPY MSstats_3.8.0.tar.gz MSstats_3.8.0.tar.gz
 
 #RUN R -e "install.packages('MSstats_3.8.0.tar.gz',type='source', repos=NULL)"
@@ -211,7 +210,9 @@ RUN sed -i 's/#cleanup_job = always/cleanup_job = always/' /etc/galaxy/galaxy.in
 #USER galaxy
 
 
-RUN . "$GALAXY_VIRTUAL_ENV/bin/activate" && export PATH=$PATH:/home/galaxy/crux/bin/
+#RUN . "$GALAXY_VIRTUAL_ENV/bin/activate" && export PATH=$PATH:/home/galaxy/crux/bin/
+#env PATH /usr/local/rvm/rubies/ruby-2.4.1/bin:/OpenMS-build/bin:$PATH
+RUN python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /home/galaxy/crux/bin/ && export PATH=$PATH:/usr/local/rvm/rubies/ruby-2.4.1/bin && gem install protk -v 1.4.2
 
 
 
