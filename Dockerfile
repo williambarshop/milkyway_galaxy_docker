@@ -1,4 +1,4 @@
-FROM bgruening/galaxy-stable:latest
+FROM bgruening/galaxy-stable:17.09
 
 MAINTAINER William Barshop, wbarshop@ucla.edu
 
@@ -37,13 +37,14 @@ RUN gpg --keyserver hkp://keyserver.ubuntu.com --recv-keys 409B6B1796C275462A170
 #installation of OpenMS 2.2.0 and handle paths for Ruby installed above.
 RUN apt-get install build-essential autoconf patch libtool automake qt4-default libqtwebkit-dev libeigen3-dev libxerces-c-dev libboost-all-dev libsvn-dev libbz2-dev cmake3 -y
 RUN curl -L https://github.com/OpenMS/OpenMS/releases/download/Release2.2.0/OpenMS-2.2.0-src.zip > OpenMS-2.2.0-src.zip && unzip OpenMS-2.2.0-src.zip && rm OpenMS-2.2.0-src.zip && mv archive/* . && rm -rf archive/ && cd OpenMS-2.2.0/ && mkdir contrib-build && cd contrib-build && cmake -DBUILD_TYPE=ALL -DNUMBER_OF_JOBS=4 ../contrib && \
-	cd / && mkdir OpenMS-build && cd OpenMS-build && cmake -DCMAKE_PREFIX_PATH="/galaxy-central/OpenMS-2.2.0/contrib-build;/usr;/usr/local" -DBOOST_USE_STATIC=OFF /galaxy-central/OpenMS-2.2.0/ && make && echo "export LD_LIBRARY_PATH='/OpenMS-build/lib:$LD_LIBRARY_PATH'" >> $HOME/.bashrc
+	cd / && mkdir OpenMS-build && cd OpenMS-build && cmake -DCMAKE_PREFIX_PATH="/galaxy-central/OpenMS-2.2.0/contrib-build;/usr;/usr/local" -DBOOST_USE_STATIC=OFF /galaxy-central/OpenMS-2.2.0/ && make && echo "export LD_LIBRARY_PATH='/OpenMS-build/lib:$LD_LIBRARY_PATH'" >> $HOME/.bashrc && mv /OpenMS-build/bin/* /galaxy_venv/bin/
 #RUN wget https://sourceforge.net/projects/open-ms/files/OpenMS/OpenMS-2.1/OpenMS-2.1.0_src_contrib_doc.tar.gz/download && tar xzvf download && rm download && cd OpenMS-2.1.0/ && mkdir contrib-build && cd contrib-build && cmake -DBUILD_TYPE=ALL -DNUMBER_OF_JOBS=4 ../contrib && \
 #	cd / && mkdir OpenMS-build && cd OpenMS-build && cmake -DCMAKE_PREFIX_PATH="/galaxy-central/OpenMS-2.1.0/contrib-build;/usr;/usr/local" -DBOOST_USE_STATIC=OFF /galaxy-central/OpenMS-2.1.0/ && make && echo "export LD_LIBRARY_PATH='/OpenMS-build/lib:$LD_LIBRARY_PATH'" >> $HOME/.bashrc
 #env PATH /usr/local/rvm/rubies/ruby-2.4.1/bin:/OpenMS-build/bin:$PATH
 ADD add_to_galaxy_path.py /galaxy-central/add_to_galaxy_path.py
 ADD add_to_galaxy_env.py /galaxy-central/add_to_galaxy_env.py
-RUN python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /usr/local/rvm/rubies/ruby-2.4.1/bin/ /OpenMS-build/bin/ && python /galaxy-central/add_to_galaxy_env.py /etc/supervisor/conf.d/galaxy.conf LD_LIBRARY_PATH=/OpenMS-build/lib/
+RUN python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /usr/local/rvm/rubies/ruby-2.4.1/bin/ /OpenMS-build/bin/
+#&& python /galaxy-central/add_to_galaxy_env.py /etc/supervisor/conf.d/galaxy.conf LD_LIBRARY_PATH=/OpenMS-build/lib/
 #env LD_LIBRARY_PATH /OpenMS-build/lib:$LD_LIBRARY_PATH
 
 
@@ -64,7 +65,7 @@ RUN cd /bin/ && tar xvfj pwiz.tar.bz2 && rm pwiz.tar.bz2
 
 #Installing crux toolkit...
 RUN git clone https://github.com/crux-toolkit/crux-toolkit.git crux-toolkit;cd crux-toolkit;cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:PATH=~/crux/;make;make install && \
-python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /home/galaxy/crux/bin/
+python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /home/galaxy/crux/bin/ && ln -s /home/galaxy/crux/bin/* /galaxy_venv/bin/ && cp -r /home/galaxy/crux/bin/ /galaxy_venv/bin/
 #env PATH $PATH:/home/galaxy/crux/bin/
 
 #SET UP BLIBBUILD
@@ -83,7 +84,7 @@ rm -rf proteowizard-code/
 
 
 #Installing Milkyway tools/configurations...
-RUN echo '3-20-2018b' && git clone https://github.com/wohllab/milkyway_proteomics.git --branch master
+RUN echo '3-25-2018' && git clone https://github.com/wohllab/milkyway_proteomics.git --branch master
 RUN mv milkyway_proteomics/galaxy_milkyway_files/tool-data/msgfplus_mods.loc $GALAXY_ROOT/tool-data/msgfplus_mods.loc;mv milkyway_proteomics/galaxy_milkyway_files/tool-data/silac_mods.loc $GALAXY_ROOT/tool-data/silac_mods.loc && \
 apt-get update && \
 apt-get install rsync -y && \
@@ -190,7 +191,7 @@ sudo apt-get install --install-recommends winehq-stable -y
 #add-apt-repository ppa:wine/wine-builds && \
 
 #INSTALL SOME PYTHON PACKAGES INTO VENV
-RUN . "$GALAXY_VIRTUAL_ENV/bin/activate" && pip install cython && pip install https://pypi.python.org/packages/de/db/7df2929ee9fad94aa9e57071bbca246a42069c0307305e00ce3f2c5e0c1d/pyopenms-2.1.0-cp27-none-manylinux1_x86_64.whl#md5=3c886f9bb4a2569c0d3c8fe29fbff5e1 && pip install numpy==1.13.0 uniprot_tools h5py==2.7.0 ephemeris futures tqdm joblib multiprocessing pandas argparse pyteomics==3.2 natsort tqdm biopython lxml plotly Orange-Bioinformatics -U
+RUN . "$GALAXY_VIRTUAL_ENV/bin/activate" && pip install --upgrade pip && pip install cython && pip install https://pypi.python.org/packages/de/db/7df2929ee9fad94aa9e57071bbca246a42069c0307305e00ce3f2c5e0c1d/pyopenms-2.1.0-cp27-none-manylinux1_x86_64.whl#md5=3c886f9bb4a2569c0d3c8fe29fbff5e1 && pip install numpy==1.13.0 uniprot_tools h5py==2.7.0 ephemeris futures tqdm joblib multiprocessing pandas argparse pyteomics==3.2 natsort tqdm biopython lxml plotly Orange-Bioinformatics -U
 #RUN . "$GALAXY_VIRTUAL_ENV/bin/activate" && pip install --upgrade pip && pip install cython && pip install https://pypi.python.org/packages/de/db/7df2929ee9fad94aa9e57071bbca246a42069c0307305e00ce3f2c5e0c1d/pyopenms-2.1.0-cp27-none-manylinux1_x86_64.whl#md5=3c886f9bb4a2569c0d3c8fe29fbff5e1 && pip install numpy==1.13.0 uniprot_tools h5py==2.7.0 ephemeris futures tqdm joblib multiprocessing pandas argparse pyteomics==3.2 natsort tqdm biopython lxml plotly Orange-Bioinformatics -U
 #RUN . "$GALAXY_VIRTUAL_ENV/bin/activate" && git clone https://github.com/pymzml/pymzML.git && cd pymzML && python setup.py install && cd .. && rm -rf pymzML && curl -L http://ontologies.berkeleybop.org/ms.obo > /galaxy_venv/local/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.14.obo
 RUN . "$GALAXY_VIRTUAL_ENV/bin/activate" && pip install pymzml==0.7.8 && curl -L http://ontologies.berkeleybop.org/ms.obo > /galaxy_venv/local/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.14.obo
@@ -212,7 +213,7 @@ RUN sed -i 's/#cleanup_job = always/cleanup_job = always/' /etc/galaxy/galaxy.in
 
 #RUN . "$GALAXY_VIRTUAL_ENV/bin/activate" && export PATH=$PATH:/home/galaxy/crux/bin/
 #env PATH /usr/local/rvm/rubies/ruby-2.4.1/bin:/OpenMS-build/bin:$PATH
-RUN python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /home/galaxy/crux/bin/ && export PATH=$PATH:/usr/local/rvm/rubies/ruby-2.4.1/bin && gem install protk -v 1.4.2
+RUN python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /home/galaxy/crux/bin/ && export PATH=/usr/local/rvm/rubies/ruby-2.4.1/bin:$PATH && gem install protk -v 1.4.2 && cp -r /usr/local/rvm/rubies/ruby-2.4.1/bin/ /galaxy_venv/bin/
 
 
 
