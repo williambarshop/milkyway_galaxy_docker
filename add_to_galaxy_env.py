@@ -21,7 +21,7 @@ with open(input_config_file,'rb') as config_reader:
             #each_line=each_line.rstrip()
             each_line_split=each_line.split("=",1)
             for each_item in things_to_add_to_path:
-                each_line_split[1]=" {0}, ".format(each_item)+each_line_split[1]
+                each_line_split[1]=" {0},".format(each_item)+each_line_split[1]
             #each_line_split[1]+="\n"
             each_line="=".join(each_line_split)
         config_file.append(each_line)
