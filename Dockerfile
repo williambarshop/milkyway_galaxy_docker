@@ -213,7 +213,8 @@ RUN sed -i 's/#cleanup_job = always/cleanup_job = always/' /etc/galaxy/galaxy.in
 
 #RUN . "$GALAXY_VIRTUAL_ENV/bin/activate" && export PATH=$PATH:/home/galaxy/crux/bin/
 #env PATH /usr/local/rvm/rubies/ruby-2.4.1/bin:/OpenMS-build/bin:$PATH
-RUN python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /home/galaxy/crux/bin/ && export PATH=/usr/local/rvm/rubies/ruby-2.4.1/bin:$PATH && gem install protk -v 1.4.2 && cp -r /usr/local/rvm/rubies/ruby-2.4.1/bin/ /galaxy_venv/bin/
+RUN python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /home/galaxy/crux/bin/ && export PATH=/usr/local/rvm/rubies/ruby-2.4.1/bin:$PATH && gem install protk -v 1.4.2
+# && cp -r /usr/local/rvm/rubies/ruby-2.4.1/bin/ /galaxy_venv/bin/
 
 
 
@@ -223,5 +224,5 @@ EXPOSE :80
 EXPOSE :21
 EXPOSE :8800
 
-CMD ["/usr/bin/startup"]
+CMD ["ln -s /usr/local/rvm/rubies/ruby-2.4.1/bin/* /galaxy_venv/bin/ && /usr/bin/startup"]
 
