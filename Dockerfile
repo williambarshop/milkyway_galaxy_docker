@@ -216,6 +216,9 @@ RUN sed -i 's/#cleanup_job = always/cleanup_job = always/' /etc/galaxy/galaxy.in
 RUN python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /home/galaxy/crux/bin/ && export PATH=/usr/local/rvm/rubies/ruby-2.4.1/bin:$PATH && gem install protk -v 1.4.2
 # && cp -r /usr/local/rvm/rubies/ruby-2.4.1/bin/ /galaxy_venv/bin/
 
+#Gotta give this an absolute path nowadays...
+RUN sed -i "s#ruby#/usr/local/rvm/rubies/ruby-2.4.1/bin/#" /usr/local/rvm/rubies/ruby-2.4.1/lib/ruby/gems/2.4.0/gems/protk-1.4.2/lib/protk/galaxy_stager.rb
+
 
 
 VOLUME ["/export/","/data/","/var/lib/docker"]
@@ -224,5 +227,5 @@ EXPOSE :80
 EXPOSE :21
 EXPOSE :8800
 
-CMD ["ln -s /usr/local/rvm/rubies/ruby-2.4.1/bin/* /galaxy_venv/bin/ && /usr/bin/startup"]
+CMD ["/usr/bin/startup"]
 
