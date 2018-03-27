@@ -217,7 +217,7 @@ RUN python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.c
 # && cp -r /usr/local/rvm/rubies/ruby-2.4.1/bin/ /galaxy_venv/bin/
 
 #Gotta give this an absolute path nowadays...
-RUN sed -i "s#ruby#/usr/local/rvm/rubies/ruby-2.4.1/bin/#" /usr/local/rvm/rubies/ruby-2.4.1/lib/ruby/gems/2.4.0/gems/protk-1.4.2/lib/protk/galaxy_stager.rb
+RUN sed -i "s#ruby#/usr/local/rvm/rubies/ruby-2.4.1/bin/ruby#" /usr/local/rvm/rubies/ruby-2.4.1/lib/ruby/gems/2.4.0/gems/protk-1.4.2/lib/protk/galaxy_stager.rb
 
 
 
