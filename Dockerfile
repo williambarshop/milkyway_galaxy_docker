@@ -84,7 +84,7 @@ rm -rf proteowizard-code/
 
 
 #Installing Milkyway tools/configurations...
-RUN echo '3-26-2018' && git clone https://github.com/wohllab/milkyway_proteomics.git --branch master
+RUN echo '7-31-2018' && git clone https://github.com/wohllab/milkyway_proteomics.git --branch master
 RUN mv milkyway_proteomics/galaxy_milkyway_files/tool-data/msgfplus_mods.loc $GALAXY_ROOT/tool-data/msgfplus_mods.loc;mv milkyway_proteomics/galaxy_milkyway_files/tool-data/silac_mods.loc $GALAXY_ROOT/tool-data/silac_mods.loc && \
 apt-get update && \
 apt-get install rsync -y && \
@@ -194,7 +194,7 @@ sudo apt-get install --install-recommends winehq-stable -y
 RUN . "$GALAXY_VIRTUAL_ENV/bin/activate" && pip install cython && pip install https://pypi.python.org/packages/de/db/7df2929ee9fad94aa9e57071bbca246a42069c0307305e00ce3f2c5e0c1d/pyopenms-2.1.0-cp27-none-manylinux1_x86_64.whl#md5=3c886f9bb4a2569c0d3c8fe29fbff5e1 && pip install numpy==1.13.0 uniprot_tools h5py==2.7.0 ephemeris futures tqdm joblib multiprocessing pandas argparse pyteomics==3.2 natsort tqdm biopython lxml plotly Orange-Bioinformatics -U
 #RUN . "$GALAXY_VIRTUAL_ENV/bin/activate" && pip install --upgrade pip && pip install cython && pip install https://pypi.python.org/packages/de/db/7df2929ee9fad94aa9e57071bbca246a42069c0307305e00ce3f2c5e0c1d/pyopenms-2.1.0-cp27-none-manylinux1_x86_64.whl#md5=3c886f9bb4a2569c0d3c8fe29fbff5e1 && pip install numpy==1.13.0 uniprot_tools h5py==2.7.0 ephemeris futures tqdm joblib multiprocessing pandas argparse pyteomics==3.2 natsort tqdm biopython lxml plotly Orange-Bioinformatics -U
 #RUN . "$GALAXY_VIRTUAL_ENV/bin/activate" && git clone https://github.com/pymzml/pymzML.git && cd pymzML && python setup.py install && cd .. && rm -rf pymzML && curl -L http://ontologies.berkeleybop.org/ms.obo > /galaxy_venv/local/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.14.obo
-RUN . "$GALAXY_VIRTUAL_ENV/bin/activate" && pip install pymzml==0.7.8 && curl -L http://ontologies.berkeleybop.org/ms.obo > /galaxy_venv/local/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.14.obo
+RUN . "$GALAXY_VIRTUAL_ENV/bin/activate" && pip install pymzml==0.7.8 && curl -L http://ontologies.berkeleybop.org/ms.obo > /galaxy_venv/local/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.14.obo && cp /galaxy_venv/local/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.14.obo /galaxy_venv/local/lib/python2.7/site-packages/pymzml/obo/psi-ms-23:06:2017.0.0.obo
 
 
 #We need to grab the phosphoRS dll file and unpack it...
