@@ -4,16 +4,23 @@ stages:
   - Build image
   - Push to Docker Hub
 
+variables:
+  CONTAINER_IMAGE: wbarshop/milkyway_galaxy
+  DOCKER_DRIVER: overlay2
+
+before_script:
+  - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASSWORD"
+
 docker build:
   stage: Build image
   script:
   - docker info
-  - docker build -t wbarshop/milkyway_galaxy:ci .
+  - docker pull $CONTAINER_IMAGE:latest || true
+  - docker build -t $CONTAINER_IMAGE:ci .
 
 docker push:
   stage: Push to Docker Hub
   only:
   - master
   script:
-  - echo "$REGISTRY_PASSWORD" | docker login -u "$REGISTRY_USER" --password-stdin
-  - docker push wbarshop/milkyway_galaxy:ci
+  - docker push $CONTAINER_IMAGE:ci
