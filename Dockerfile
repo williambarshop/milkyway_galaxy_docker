@@ -40,17 +40,17 @@ RUN curl -L https://github.com/OpenMS/OpenMS/releases/download/Release2.2.0/Open
 	cd / && mkdir OpenMS-build && cd OpenMS-build && cmake -DCMAKE_PREFIX_PATH="/galaxy-central/OpenMS-2.2.0/contrib-build;/usr;/usr/local" -DBOOST_USE_STATIC=OFF /galaxy-central/OpenMS-2.2.0/ && make && echo "export LD_LIBRARY_PATH='/OpenMS-build/lib:$LD_LIBRARY_PATH'" >> $HOME/.bashrc && mv /OpenMS-build/bin/* /galaxy_venv/bin/
 #RUN wget https://sourceforge.net/projects/open-ms/files/OpenMS/OpenMS-2.1/OpenMS-2.1.0_src_contrib_doc.tar.gz/download && tar xzvf download && rm download && cd OpenMS-2.1.0/ && mkdir contrib-build && cd contrib-build && cmake -DBUILD_TYPE=ALL -DNUMBER_OF_JOBS=4 ../contrib && \
 #	cd / && mkdir OpenMS-build && cd OpenMS-build && cmake -DCMAKE_PREFIX_PATH="/galaxy-central/OpenMS-2.1.0/contrib-build;/usr;/usr/local" -DBOOST_USE_STATIC=OFF /galaxy-central/OpenMS-2.1.0/ && make && echo "export LD_LIBRARY_PATH='/OpenMS-build/lib:$LD_LIBRARY_PATH'" >> $HOME/.bashrc
-#env PATH /usr/local/rvm/rubies/ruby-2.4.1/bin:/OpenMS-build/bin:$PATH
+#env PATH /usr/local/rvm/rubies/ruby-2.5.1/bin:/OpenMS-build/bin:$PATH
 ADD add_to_galaxy_path.py /galaxy-central/add_to_galaxy_path.py
 ADD add_to_galaxy_env.py /galaxy-central/add_to_galaxy_env.py
-RUN python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /usr/local/rvm/rubies/ruby-2.4.1/bin/ /OpenMS-build/bin/
+RUN python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /usr/local/rvm/rubies/ruby-2.5.1/bin/ /OpenMS-build/bin/
 #&& python /galaxy-central/add_to_galaxy_env.py /etc/supervisor/conf.d/galaxy.conf LD_LIBRARY_PATH=/OpenMS-build/lib/
 #env LD_LIBRARY_PATH /OpenMS-build/lib:$LD_LIBRARY_PATH
 
 
 
 #Fix for R...
-RUN touch /etc/bash_completion.d/R;cp /etc/bash_completion.d/R /usr/share/bash-completion/completions/R;apt-get install -f;apt-get -o Dpkg::Options::=--force-confnew --yes --force-yes install r-base-core r-base
+RUN touch /etc/bash_completion.d/R;cp /etc/bash_completion.d/R /usr/share/bash-completion/completions/R;apt-get update; apt-get install -f;apt-get -o Dpkg::Options::=--force-confnew --yes --force-yes install r-base-core r-base
 #Installing R packages, and the ruby gem for protk
 RUN ["/bin/bash","-c","source /usr/local/rvm/scripts/rvm && gem install protk -v 1.4.2"]
 RUN R -e "install.packages(c('gplots','lme4','ggplot2','ggrepel','reshape','reshape2','data.table','rjson','Rcpp','survival','minpack.lm'),repos='https://cran.rstudio.com/',dependencies=TRUE)" && \
@@ -62,6 +62,9 @@ RUN wget "http://msstats.org/wp-content/uploads/2017/09/MSstats_3.9.2.tar.gz";R 
 #Installing proteowizard...
 COPY pwiz-bin-linux-x86_64-gcc48-release-3_0_10738.tar.bz2 /bin/pwiz.tar.bz2
 RUN cd /bin/ && tar xvfj pwiz.tar.bz2 && rm pwiz.tar.bz2
+
+RUN git config --global user.email "docker@localhost" ; git config --global user.name "docker"
+
 
 #Installing crux toolkit...
 RUN git clone https://github.com/crux-toolkit/crux-toolkit.git crux-toolkit;cd crux-toolkit;cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:PATH=~/crux/;make;make install && \
@@ -212,12 +215,12 @@ RUN sed -i 's/#cleanup_job = always/cleanup_job = always/' /etc/galaxy/galaxy.in
 
 
 #RUN . "$GALAXY_VIRTUAL_ENV/bin/activate" && export PATH=$PATH:/home/galaxy/crux/bin/
-#env PATH /usr/local/rvm/rubies/ruby-2.4.1/bin:/OpenMS-build/bin:$PATH
-RUN python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /home/galaxy/crux/bin/ && export PATH=/usr/local/rvm/rubies/ruby-2.4.1/bin:$PATH && gem install protk -v 1.4.2
-# && cp -r /usr/local/rvm/rubies/ruby-2.4.1/bin/ /galaxy_venv/bin/
+#env PATH /usr/local/rvm/rubies/ruby-2.5.1/bin:/OpenMS-build/bin:$PATH
+RUN python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /home/galaxy/crux/bin/ && export PATH=/usr/local/rvm/rubies/ruby-2.5.1/bin:$PATH && gem install protk -v 1.4.2
+# && cp -r /usr/local/rvm/rubies/ruby-2.5.1/bin/ /galaxy_venv/bin/
 
 #Gotta give this an absolute path nowadays...
-RUN sed -i "s#ruby#/usr/local/rvm/rubies/ruby-2.4.1/bin/ruby#" /usr/local/rvm/rubies/ruby-2.4.1/lib/ruby/gems/2.4.0/gems/protk-1.4.2/lib/protk/galaxy_stager.rb
+RUN sed -i "s#ruby#/usr/local/rvm/rubies/ruby-2.5.1/bin/ruby#" /usr/local/rvm/rubies/ruby-2.5.1/lib/ruby/gems/2.5.0/gems/protk-1.4.2/lib/protk/galaxy_stager.rb
 
 
 
