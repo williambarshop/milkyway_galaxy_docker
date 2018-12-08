@@ -76,7 +76,7 @@ python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf 
 #tar xvfj pwiz.tar.bz2 && \
 RUN mkdir /galaxy-central/tools/wohl-proteomics/ && \
 mkdir /galaxy-central/tools/wohl-proteomics/ssl_converter/ && \
-svn checkout https://svn.code.sf.net/p/proteowizard/code/trunk/pwiz proteowizard-code && \
+svn checkout -r11856 https://svn.code.sf.net/p/proteowizard/code/trunk/pwiz proteowizard-code && \
 cd proteowizard-code/ && \
 sh quickbuild.sh -j8 optimization=space address-model=64 pwiz_tools/BiblioSpec && \
 mkdir /galaxy-central/tools/wohl-proteomics/ssl_converter/blibbuild && \
