@@ -15,8 +15,8 @@ docker build:
   stage: Build image
   script:
   - docker info
-  - docker pull $CONTAINER_IMAGE:latest || true
-  - docker build --cache-from $CONTAINER_IMAGE:latest -t $CONTAINER_IMAGE:ci -t $CONTAINER_IMAGE:$CI_COMMIT_SHA .
+  - docker pull $CONTAINER_IMAGE:ci || true
+  - docker build --cache-from $CONTAINER_IMAGE:ci -t $CONTAINER_IMAGE:ci -t $CONTAINER_IMAGE:$CI_COMMIT_SHA .
 
 docker push:
   stage: Push to Docker Hub
