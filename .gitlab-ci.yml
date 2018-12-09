@@ -29,4 +29,4 @@ docker deploy:
   stage: swarm deploy
   image: appropriate/curl:latest
   script:
-  - curl --request POST --form "token=$CI_JOB_TOKEN" --form ref=master http://gitlab.glitterband/api/v4/projects/6/trigger/pipeline
+  - curl --request POST --form "token=$CI_JOB_TOKEN" --form ref=master http://gitlab.glitterband/api/v4/projects/3/trigger/pipeline
