@@ -1,4 +1,4 @@
-FROM bgruening/galaxy-stable:17.09
+FROM bgruening/galaxy-stable:18.01
 
 MAINTAINER William Barshop, wbarshop@ucla.edu
 
@@ -29,8 +29,6 @@ RUN apt-get install -y \
 #RUN gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 && \
 RUN gpg --keyserver hkp://keyserver.ubuntu.com --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 && \
     \curl -sSL https://get.rvm.io | grep -v __rvm_print_headline | bash -s stable --ruby
-#    \curl -sSL https://get.rvm.io | bash -s stable --ruby
-#    \curl -sSL https://raw.githubusercontent.com/wayneeseguin/rvm/stable/binscripts/rvm-installer | sudo bash -s stable
 
 
 
@@ -38,15 +36,9 @@ RUN gpg --keyserver hkp://keyserver.ubuntu.com --recv-keys 409B6B1796C275462A170
 RUN apt-get install build-essential autoconf patch libtool automake qt4-default libqtwebkit-dev libeigen3-dev libxerces-c-dev libboost-all-dev libsvn-dev libbz2-dev cmake3 -y
 RUN curl -L https://github.com/OpenMS/OpenMS/releases/download/Release2.2.0/OpenMS-2.2.0-src.zip > OpenMS-2.2.0-src.zip && unzip OpenMS-2.2.0-src.zip && rm OpenMS-2.2.0-src.zip && mv archive/* . && rm -rf archive/ && cd OpenMS-2.2.0/ && mkdir contrib-build && cd contrib-build && cmake -DBUILD_TYPE=ALL -DNUMBER_OF_JOBS=4 ../contrib && \
 	cd / && mkdir OpenMS-build && cd OpenMS-build && cmake -DCMAKE_PREFIX_PATH="/galaxy-central/OpenMS-2.2.0/contrib-build;/usr;/usr/local" -DBOOST_USE_STATIC=OFF /galaxy-central/OpenMS-2.2.0/ && make && echo "export LD_LIBRARY_PATH='/OpenMS-build/lib:$LD_LIBRARY_PATH'" >> $HOME/.bashrc && mv /OpenMS-build/bin/* /galaxy_venv/bin/
-#RUN wget https://sourceforge.net/projects/open-ms/files/OpenMS/OpenMS-2.1/OpenMS-2.1.0_src_contrib_doc.tar.gz/download && tar xzvf download && rm download && cd OpenMS-2.1.0/ && mkdir contrib-build && cd contrib-build && cmake -DBUILD_TYPE=ALL -DNUMBER_OF_JOBS=4 ../contrib && \
-#	cd / && mkdir OpenMS-build && cd OpenMS-build && cmake -DCMAKE_PREFIX_PATH="/galaxy-central/OpenMS-2.1.0/contrib-build;/usr;/usr/local" -DBOOST_USE_STATIC=OFF /galaxy-central/OpenMS-2.1.0/ && make && echo "export LD_LIBRARY_PATH='/OpenMS-build/lib:$LD_LIBRARY_PATH'" >> $HOME/.bashrc
-#env PATH /usr/local/rvm/rubies/ruby-2.5.1/bin:/OpenMS-build/bin:$PATH
 ADD add_to_galaxy_path.py /galaxy-central/add_to_galaxy_path.py
 ADD add_to_galaxy_env.py /galaxy-central/add_to_galaxy_env.py
 RUN python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /usr/local/rvm/rubies/ruby-2.5.1/bin/ /OpenMS-build/bin/
-#&& python /galaxy-central/add_to_galaxy_env.py /etc/supervisor/conf.d/galaxy.conf LD_LIBRARY_PATH=/OpenMS-build/lib/
-#env LD_LIBRARY_PATH /OpenMS-build/lib:$LD_LIBRARY_PATH
-
 
 
 #Fix for R...
@@ -55,7 +47,6 @@ RUN touch /etc/bash_completion.d/R;cp /etc/bash_completion.d/R /usr/share/bash-c
 RUN ["/bin/bash","-c","source /usr/local/rvm/scripts/rvm && gem install protk -v 1.4.2"]
 RUN R -e "install.packages(c('gplots','lme4','ggplot2','ggrepel','reshape','reshape2','data.table','rjson','Rcpp','survival','minpack.lm'),repos='https://cran.rstudio.com/',dependencies=TRUE)" && \
     R -e "source('https://bioconductor.org/biocLite.R');biocLite(c('limma','marray','preprocessCore','MSnbase'),ask=FALSE)"
-#COPY MSstats_3.8.0.tar.gz MSstats_3.8.0.tar.gz
 
 #RUN R -e "install.packages('MSstats_3.8.0.tar.gz',type='source', repos=NULL)"
 RUN wget "http://msstats.org/wp-content/uploads/2017/09/MSstats_3.9.2.tar.gz";R -e "install.packages('MSstats_3.9.2.tar.gz',type='source', repos=NULL)"; rm MSstats_3.9.2.tar.gz
@@ -125,7 +116,7 @@ UWSGI_THREADS=4 \
 GALAXY_ROOT=/galaxy-central \
 GALAXY_CONFIG_DIR=/etc/galaxy \
 GALAXY_DESTINATIONS_DEFAULT=local \
-GALAXY_CONFIG_FILE=$GALAXY_CONFIG_DIR/galaxy.ini \
+GALAXY_CONFIG_FILE=$GALAXY_CONFIG_DIR/galaxy.yml \
 GALAXY_CONFIG_TOOL_CONFIG_FILE=/home/galaxy/milkyway_tool_conf.xml,$GALAXY_ROOT/config/shed_tool_conf.xml.sample  \
 NONUSE=slurmd,slurmctld
 
@@ -209,7 +200,7 @@ RUN mkdir phosphotemp && cd phosphotemp && curl -L http://ms.imp.ac.at/index.php
 RUN sed -i "s#        pattern = r\"(#        directory = directory.replace('\\\\\\\\','\\\\\\\\\\\\\\\\')\n        pattern = r\"(#g" /galaxy_venv/local/lib/python2.7/site-packages/pulsar/client/staging/up.py
 
 #Modify galaxy.ini to always cleanup...
-RUN sed -i 's/#cleanup_job = always/cleanup_job = always/' /etc/galaxy/galaxy.ini
+RUN sed -i 's/#cleanup_job = always/cleanup_job = always/' /etc/galaxy/galaxy.yml
 
 #USER galaxy
 
