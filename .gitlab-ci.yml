@@ -2,8 +2,11 @@ image: docker:stable
 
 stages:
   - Build image
+  - Build image dev
   - Push to Docker Hub
+  - Push to Docker Hub dev
   - swarm deploy
+  - swarm deploy dev
 
 variables:
   CONTAINER_IMAGE: wbarshop/milkyway_galaxy
@@ -11,11 +14,23 @@ variables:
 
 docker build:
   stage: Build image
+  only:
+  - master
   script:
   - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASSWORD"
   - docker info
   - docker pull $CONTAINER_IMAGE:ci || true
   - docker build --cache-from $CONTAINER_IMAGE:ci -t $CONTAINER_IMAGE:ci -t $CONTAINER_IMAGE:$CI_COMMIT_SHA .
+
+docker build dev:
+  stage: Build image dev
+  except:
+  - master
+  script:
+  - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASSWORD"
+  - docker info
+  - docker pull $CONTAINER_IMAGE:ci || true
+  - docker build --cache-from $CONTAINER_IMAGE:cidev -t $CONTAINER_IMAGE:cidev -t $CONTAINER_IMAGE:$CI_COMMIT_SHA .
 
 docker push:
   stage: Push to Docker Hub
@@ -25,8 +40,30 @@ docker push:
   - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASSWORD"
   - docker push $CONTAINER_IMAGE:ci
 
+docker push dev:
+  stage: Push to Docker Hub dev
+  except:
+  - master
+  script:
+  - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASSWORD"
+  - docker push $CONTAINER_IMAGE:cidev
+
 docker deploy:
   stage: swarm deploy
+  only:
+  - master
   image: appropriate/curl:latest
   script:
+  - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASSWORD"
+  - docker pull wbarshop/milkyway_galaxy:ci
+  - curl --request POST --form "token=$CI_JOB_TOKEN" --form ref=master http://gitlab.glitterband/api/v4/projects/3/trigger/pipeline
+
+docker deploy dev:
+  stage: swarm deploy dev
+  except:
+  - master
+  image: appropriate/curl:latest
+  script:
+  - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASSWORD"
+  - docker pull wbarshop/milkyway_galaxy:cidev
   - curl --request POST --form "token=$CI_JOB_TOKEN" --form ref=master http://gitlab.glitterband/api/v4/projects/3/trigger/pipeline
