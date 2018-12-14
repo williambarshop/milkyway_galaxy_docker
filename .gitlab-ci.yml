@@ -18,6 +18,7 @@ docker build:
   script:
   - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASSWORD"
   - docker info
+  - sed -i s/build_rev/${CI_COMMIT_SHA:0:8}/ Dockerfile
   - docker pull $CONTAINER_IMAGE:ci || true
   - docker build --cache-from $CONTAINER_IMAGE:ci -t $CONTAINER_IMAGE:ci -t $CONTAINER_IMAGE:$CI_COMMIT_SHA .
 
@@ -28,6 +29,7 @@ docker build dev:
   script:
   - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASSWORD"
   - docker info
+  - sed -i s/build_rev/${CI_COMMIT_SHA:0:8}/ Dockerfile
   - docker pull $CONTAINER_IMAGE:ci || true
   - docker build --cache-from $CONTAINER_IMAGE:cidev -t $CONTAINER_IMAGE:cidev -t $CONTAINER_IMAGE:$CI_COMMIT_SHA .
 
