@@ -8,7 +8,7 @@ RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E03280
     echo "deb http://download.mono-project.com/repo/debian wheezy main" | sudo tee /etc/apt/sources.list.d/mono-xamarin.list && \
     apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9;sh -c 'echo "deb http://cran.rstudio.com/bin/linux/ubuntu trusty/" >> /etc/apt/sources.list';apt-get update --yes --force-yes; \
     apt-get install software-properties-common; add-apt-repository ppa:george-edison55/cmake-3.x ; apt-get update --yes
-#Installing Milkyway dependencies... and a few things to help debug
+#Installing Milkyway dependencies... and a few things to help debug, and wine
 RUN apt-get install -y \
 	pigz \
 	git \
@@ -24,78 +24,96 @@ RUN apt-get install -y \
 	mono-complete \
         unzip \
         nano \
-        screen
+	screen \
+        build-essential \
+        autoconf \
+        patch \
+        libtool \
+        automake \
+        cmake3 \
+        python-software-properties \
+	software-properties-common
 
-#RUN gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 && \
+#Installing wine....
+RUN mv /etc/apt/sources.list.d/htcondor.list temporary_file && \
+dpkg --add-architecture i386 && \
+wget https://dl.winehq.org/wine-builds/Release.key && \
+sudo apt-key add Release.key && \
+sudo apt-add-repository https://dl.winehq.org/wine-builds/ubuntu/ && \
+apt-get update && \
+sudo apt-get install --install-recommends winehq-stable -y
+
+
+#Let's handle rvm and protk installation
 RUN gpg --keyserver hkp://keyserver.ubuntu.com --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB && \
-    \curl -sSL https://get.rvm.io | grep -v __rvm_print_headline | bash -s stable --ruby
+    \curl -sSL https://get.rvm.io | grep -v __rvm_print_headline | bash -s stable --ruby=2.5.1 && \
+    /bin/bash -c "source /usr/local/rvm/scripts/rvm && gem install protk -v 1.4.2"
 
-
-
-#installation of OpenMS 2.2.0 and handle paths for Ruby installed above.
-RUN apt-get install build-essential autoconf patch libtool automake qt4-default libqtwebkit-dev libeigen3-dev libxerces-c-dev libboost-all-dev libsvn-dev libbz2-dev cmake3 -y
-RUN curl -L https://github.com/OpenMS/OpenMS/releases/download/Release2.2.0/OpenMS-2.2.0-src.zip > OpenMS-2.2.0-src.zip && unzip OpenMS-2.2.0-src.zip && rm OpenMS-2.2.0-src.zip && mv archive/* . && rm -rf archive/ && cd OpenMS-2.2.0/ && mkdir contrib-build && cd contrib-build && cmake -DBUILD_TYPE=ALL -DNUMBER_OF_JOBS=4 ../contrib && \
-	cd / && mkdir OpenMS-build && cd OpenMS-build && cmake -DCMAKE_PREFIX_PATH="/galaxy-central/OpenMS-2.2.0/contrib-build;/usr;/usr/local" -DBOOST_USE_STATIC=OFF /galaxy-central/OpenMS-2.2.0/ && make && echo "export LD_LIBRARY_PATH='/OpenMS-build/lib:$LD_LIBRARY_PATH'" >> $HOME/.bashrc && mv /OpenMS-build/bin/* /galaxy_venv/bin/
+#scripts to handle galaxy supervisor paths and env values
 ADD add_to_galaxy_path.py /galaxy-central/add_to_galaxy_path.py
 ADD add_to_galaxy_env.py /galaxy-central/add_to_galaxy_env.py
-RUN python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /usr/local/rvm/rubies/ruby-2.5.1/bin/ /OpenMS-build/bin/
+
+RUN python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /usr/local/rvm/rubies/ruby-2.5.1/bin/ /OpenMS-build/bin/ /home/galaxy/crux/bin/ && \
+	python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /usr/local/rvm/rubies/ruby-2.5.1/bin/
+
+#installation of OpenMS 2.2.0.
+RUN apt-get install build-essential autoconf patch libtool automake qt4-default libqtwebkit-dev libeigen3-dev libxerces-c-dev libboost-all-dev libsvn-dev libbz2-dev cmake3 -y
+RUN curl -L https://github.com/OpenMS/OpenMS/releases/download/Release2.2.0/OpenMS-2.2.0-src.zip > OpenMS-2.2.0-src.zip && unzip OpenMS-2.2.0-src.zip && rm OpenMS-2.2.0-src.zip && mv archive/* . && rm -rf archive/ && cd OpenMS-2.2.0/ && mkdir contrib-build && cd contrib-build && \
+    cmake -DBUILD_TYPE=ALL -DNUMBER_OF_JOBS=8 ../contrib && \
+    cd / && mkdir OpenMS-build && cd OpenMS-build && cmake -DCMAKE_PREFIX_PATH="/galaxy-central/OpenMS-2.2.0/contrib-build;/usr;/usr/local" -DBOOST_USE_STATIC=OFF -DOPENMS_CONTRIB_LIBS=/galaxy-central/OpenMS-2.2.0/contrib-build /galaxy-central/OpenMS-2.2.0/ && \
+    make && echo "export LD_LIBRARY_PATH='/OpenMS-build/lib:$LD_LIBRARY_PATH'" >> $HOME/.bashrc && mv /OpenMS-build/bin/* /galaxy_venv/bin/
+
+#INSTALL SOME PYTHON PACKAGES INTO VENV
+RUN . "$GALAXY_VIRTUAL_ENV/bin/activate" && pip install cython && pip install https://pypi.python.org/packages/de/db/7df2929ee9fad94aa9e57071bbca246a42069c0307305e00ce3f2c5e0c1d/pyopenms-2.1.0-cp27-none-manylinux1_x86_64.whl#md5=3c886f9bb4a2569c0d3c8fe29fbff5e1 && pip install numpy==1.13.0 uniprot_tools h5py==2.7.0 ephemeris futures tqdm joblib multiprocessing pandas argparse pyteomics==3.2 natsort tqdm biopython lxml plotly Orange-Bioinformatics -U && \
+    pip install pymzml==0.7.8 && curl -L http://ontologies.berkeleybop.org/ms.obo > /galaxy_venv/local/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.14.obo && cp /galaxy_venv/local/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.14.obo /galaxy_venv/local/lib/python2.7/site-packages/pymzml/obo/psi-ms-23:06:2017.0.0.obo
 
 
-#Fix for R...
-RUN touch /etc/bash_completion.d/R;cp /etc/bash_completion.d/R /usr/share/bash-completion/completions/R;apt-get update; apt-get install -f;apt-get -o Dpkg::Options::=--force-confnew --yes --force-yes install r-base-core r-base
-#Installing R packages, and the ruby gem for protk
-RUN ["/bin/bash","-c","source /usr/local/rvm/scripts/rvm && gem install protk -v 1.4.2"]
-RUN R -e "install.packages(c('gplots','lme4','ggplot2','ggrepel','reshape','reshape2','data.table','rjson','Rcpp','survival','minpack.lm'),repos='https://cran.rstudio.com/',dependencies=TRUE)" && \
-    R -e "source('https://bioconductor.org/biocLite.R');biocLite(c('limma','marray','preprocessCore','MSnbase'),ask=FALSE)"
+#Installing R packages and MSstats
+RUN touch /etc/bash_completion.d/R;cp /etc/bash_completion.d/R /usr/share/bash-completion/completions/R;apt-get update; apt-get install -f;apt-get -o Dpkg::Options::=--force-confnew --yes --force-yes install r-base-core r-base && \
+    R -e "install.packages(c('gplots','lme4','ggplot2','ggrepel','reshape','reshape2','data.table','rjson','Rcpp','survival','minpack.lm'),repos='https://cran.rstudio.com/',dependencies=TRUE)" && \
+    R -e "source('https://bioconductor.org/biocLite.R');biocLite(c('limma','marray','preprocessCore','MSnbase'),ask=FALSE)" && \
+    wget "http://msstats.org/wp-content/uploads/2017/09/MSstats_3.9.2.tar.gz";R -e "install.packages('MSstats_3.9.2.tar.gz',type='source', repos=NULL)"; rm MSstats_3.9.2.tar.gz
 
-#RUN R -e "install.packages('MSstats_3.8.0.tar.gz',type='source', repos=NULL)"
-RUN wget "http://msstats.org/wp-content/uploads/2017/09/MSstats_3.9.2.tar.gz";R -e "install.packages('MSstats_3.9.2.tar.gz',type='source', repos=NULL)"; rm MSstats_3.9.2.tar.gz
 #Installing proteowizard...
 COPY pwiz-bin-linux-x86_64-gcc48-release-3_0_10738.tar.bz2 /bin/pwiz.tar.bz2
 RUN cd /bin/ && tar xvfj pwiz.tar.bz2 && rm pwiz.tar.bz2
 
-RUN git config --global user.email "docker@localhost" ; git config --global user.name "docker"
 
 
 #Installing crux toolkit...
-RUN git clone https://github.com/crux-toolkit/crux-toolkit.git crux-toolkit;cd crux-toolkit;cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:PATH=~/crux/;make;make install && \
-python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /home/galaxy/crux/bin/ && cp /home/galaxy/crux/bin/crux /galaxy_venv/bin/crux
-#env PATH $PATH:/home/galaxy/crux/bin/
+RUN git config --global user.email "docker@localhost" ; git config --global user.name "docker" && \
+    git clone https://github.com/crux-toolkit/crux-toolkit.git crux-toolkit;cd crux-toolkit;cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:PATH=~/crux/;make;make install && \
+    python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /home/galaxy/crux/bin/ && cp /home/galaxy/crux/bin/crux /galaxy_venv/bin/crux
 
 #SET UP BLIBBUILD
-#RUN wget http://teamcity.labkey.org:8080/guestAuth/repository/download/bt17/547313:id/pwiz-bin-linux-x86_64-gcc48-release-3_0_11799.tar.bz2 && mv pwiz-bin-linux-x86_64-gcc48-release-3_0_11799.tar.bz2 pwiz.tar.bz2 && \
-#tar xvfj pwiz.tar.bz2 && \
 RUN mkdir /galaxy-central/tools/wohl-proteomics/ && \
-mkdir /galaxy-central/tools/wohl-proteomics/ssl_converter/ && \
-svn checkout -r11856 https://svn.code.sf.net/p/proteowizard/code/trunk/pwiz proteowizard-code && \
-cd proteowizard-code/ && \
-sh quickbuild.sh -j8 optimization=space address-model=64 pwiz_tools/BiblioSpec && \
-mkdir /galaxy-central/tools/wohl-proteomics/ssl_converter/blibbuild && \
-cp build-linux-x86_64/BiblioSpec/* /galaxy-central/tools/wohl-proteomics/ssl_converter/blibbuild/ && \
-tar xvfj /galaxy-central/tools/wohl-proteomics/ssl_converter/blibbuild/bibliospec*.tar.bz2 && \
-cd .. && \
-rm -rf proteowizard-code/
+    mkdir /galaxy-central/tools/wohl-proteomics/ssl_converter/ && \
+    svn checkout -r11856 https://svn.code.sf.net/p/proteowizard/code/trunk/pwiz proteowizard-code && \
+    cd proteowizard-code/ && \
+    sh quickbuild.sh -j8 optimization=space address-model=64 pwiz_tools/BiblioSpec && \
+    mkdir /galaxy-central/tools/wohl-proteomics/ssl_converter/blibbuild && \
+    cp build-linux-x86_64/BiblioSpec/* /galaxy-central/tools/wohl-proteomics/ssl_converter/blibbuild/ && \
+    tar xvfj /galaxy-central/tools/wohl-proteomics/ssl_converter/blibbuild/bibliospec*.tar.bz2 && \
+    cd .. && \
+    rm -rf proteowizard-code/
 
 
 #Installing Milkyway tools/configurations...
-RUN echo 'The milkyway toolset is cloned auotmatically after a triggered pull from commit_rev-CI_job_ID' && git clone https://github.com/wohllab/milkyway_proteomics.git --branch master
-RUN mv milkyway_proteomics/galaxy_milkyway_files/tool-data/msgfplus_mods.loc $GALAXY_ROOT/tool-data/msgfplus_mods.loc;mv milkyway_proteomics/galaxy_milkyway_files/tool-data/silac_mods.loc $GALAXY_ROOT/tool-data/silac_mods.loc && \
-apt-get update && \
-apt-get install rsync -y && \
-rsync -avzh milkyway_proteomics/galaxy_milkyway_files/tools/wohl-proteomics/ $GALAXY_ROOT/tools/wohl-proteomics/
-RUN mv milkyway_proteomics/galaxy_milkyway_files/config/wohl_tool_conf.xml /home/galaxy/wohl_tool_conf.xml
+RUN echo 'The milkyway toolset is cloned auotmatically after a triggered pull from commit_rev-CI_job_ID' && git clone https://github.com/wohllab/milkyway_proteomics.git --branch master && \
+    mv milkyway_proteomics/galaxy_milkyway_files/tool-data/msgfplus_mods.loc $GALAXY_ROOT/tool-data/msgfplus_mods.loc;mv milkyway_proteomics/galaxy_milkyway_files/tool-data/silac_mods.loc $GALAXY_ROOT/tool-data/silac_mods.loc && \
+    apt-get update && \
+    apt-get install rsync -y && \
+    rsync -avzh milkyway_proteomics/galaxy_milkyway_files/tools/wohl-proteomics/ $GALAXY_ROOT/tools/wohl-proteomics/ && \
+    mv milkyway_proteomics/galaxy_milkyway_files/config/wohl_tool_conf.xml /home/galaxy/wohl_tool_conf.xml
 
 #Now let's move all the tool data from our local machine into the docker image.
 #After that's done, we'll have to take care of a few galaxy configuration XML files...
 #The first is going to be the job_conf xml
-RUN rm $GALAXY_CONFIG_DIR/job_conf.xml
-#COPY DOCKER_JOB_CONF.XML $GALAXY_CONFIG_DIR/job_conf.xml
-RUN mv milkyway_proteomics/galaxy_milkyway_files/config/job_conf.xml $GALAXY_CONFIG_DIR/job_conf.xml
-
+#and COPY DOCKER_JOB_CONF.XML $GALAXY_CONFIG_DIR/job_conf.xml
 #The second is the tool_conf xml
-#!RUN tail -n -1 $GALAXY_ROOT/config/tool_conf.xml.sample > /home/galaxy/tmp_tool_conf.xml; head -n -1 /home/galaxy/wohl_tool_conf.xml > /home/galaxy/wohl_tool_tmp.xml; tail -n -1 /home/galaxy/wohl_tool_tmp.xml > /home/galaxy/wohl_tool_tmp_final.xml; cat /home/galaxy/wohl_tool_tmp_final.xml >> /home/galaxy/milkyway_tool_conf.xml
-RUN head -n -1 $GALAXY_ROOT/config/tool_conf.xml.sample > /home/galaxy/milkyway_tool_conf.xml; head -n -1 /home/galaxy/wohl_tool_conf.xml > /home/galaxy/wohl_tool_tmp.xml; sed -e "1d" /home/galaxy/wohl_tool_tmp.xml > /home/galaxy/wohl_tool_tmp_final.xml; cat /home/galaxy/wohl_tool_tmp_final.xml >> /home/galaxy/milkyway_tool_conf.xml; echo "</toolbox>" >> /home/galaxy/milkyway_tool_conf.xml; rm /home/galaxy/wohl_tool_tmp.xml; rm /home/galaxy/wohl_tool_tmp_final.xml
-#! cat /home/galaxy/wohl_tool_conf.xml >> /home/galaxy/milkyway_tool_conf.xml
+RUN rm $GALAXY_CONFIG_DIR/job_conf.xml && \
+    mv milkyway_proteomics/galaxy_milkyway_files/config/job_conf.xml $GALAXY_CONFIG_DIR/job_conf.xml && \
+    head -n -1 $GALAXY_ROOT/config/tool_conf.xml.sample > /home/galaxy/milkyway_tool_conf.xml; head -n -1 /home/galaxy/wohl_tool_conf.xml > /home/galaxy/wohl_tool_tmp.xml; sed -e "1d" /home/galaxy/wohl_tool_tmp.xml > /home/galaxy/wohl_tool_tmp_final.xml; cat /home/galaxy/wohl_tool_tmp_final.xml >> /home/galaxy/milkyway_tool_conf.xml; echo "</toolbox>" >> /home/galaxy/milkyway_tool_conf.xml; rm /home/galaxy/wohl_tool_tmp.xml; rm /home/galaxy/wohl_tool_tmp_final.xml
 
 
 #Building Fido...
@@ -159,56 +177,20 @@ RUN startup_lite && \
     workflow-install --workflow_path /galaxy-central/milkyway_proteomics/workflows/ -g http://localhost:8080 -u admin@galaxy.org -p admin
 
 
-#Installing wine....
-RUN apt-get update && apt-get install software-properties-common python-software-properties -y && \
-mv /etc/apt/sources.list.d/htcondor.list temporary_file && \
-dpkg --add-architecture i386 && \
-wget https://dl.winehq.org/wine-builds/Release.key && \
-sudo apt-key add Release.key && \
-sudo apt-add-repository https://dl.winehq.org/wine-builds/ubuntu/ && \
-apt-get update && \
-sudo apt-get install --install-recommends winehq-stable -y
-#&& \
-#mv temporary_file /etc/apt/sources.list.d/htcondor.list && \
-#dpkg --remove-architecture i386
-
-#RUN echo "deb [arch=amd64] http://research.cs.wisc.edu/htcondor/ubuntu/stable/ precise contrib" >> /etc/apt/sources.list && \
-#add-apt-repository ppa:ubuntu-wine/ppa && \
-#apt-get install --install-recommends wine -y
-
-#installation of wine..
-#RUN apt-get install software-properties-common python-software-properties -y && \
-#add-apt-repository ppa:ubuntu-wine/ppa && \
-#apt-get update --yes --force-yes && \
-#apt-get install wine1.8 winetricks -y
-
-#add-apt-repository ppa:wine/wine-builds && \
-
-#INSTALL SOME PYTHON PACKAGES INTO VENV
-RUN . "$GALAXY_VIRTUAL_ENV/bin/activate" && pip install cython && pip install https://pypi.python.org/packages/de/db/7df2929ee9fad94aa9e57071bbca246a42069c0307305e00ce3f2c5e0c1d/pyopenms-2.1.0-cp27-none-manylinux1_x86_64.whl#md5=3c886f9bb4a2569c0d3c8fe29fbff5e1 && pip install numpy==1.13.0 uniprot_tools h5py==2.7.0 ephemeris futures tqdm joblib multiprocessing pandas argparse pyteomics==3.2 natsort tqdm biopython lxml plotly Orange-Bioinformatics -U
-#RUN . "$GALAXY_VIRTUAL_ENV/bin/activate" && pip install --upgrade pip && pip install cython && pip install https://pypi.python.org/packages/de/db/7df2929ee9fad94aa9e57071bbca246a42069c0307305e00ce3f2c5e0c1d/pyopenms-2.1.0-cp27-none-manylinux1_x86_64.whl#md5=3c886f9bb4a2569c0d3c8fe29fbff5e1 && pip install numpy==1.13.0 uniprot_tools h5py==2.7.0 ephemeris futures tqdm joblib multiprocessing pandas argparse pyteomics==3.2 natsort tqdm biopython lxml plotly Orange-Bioinformatics -U
-#RUN . "$GALAXY_VIRTUAL_ENV/bin/activate" && git clone https://github.com/pymzml/pymzML.git && cd pymzML && python setup.py install && cd .. && rm -rf pymzML && curl -L http://ontologies.berkeleybop.org/ms.obo > /galaxy_venv/local/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.14.obo
-RUN . "$GALAXY_VIRTUAL_ENV/bin/activate" && pip install pymzml==0.7.8 && curl -L http://ontologies.berkeleybop.org/ms.obo > /galaxy_venv/local/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.14.obo && cp /galaxy_venv/local/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.14.obo /galaxy_venv/local/lib/python2.7/site-packages/pymzml/obo/psi-ms-23:06:2017.0.0.obo
-
-
 #We need to grab the phosphoRS dll file and unpack it...
 RUN mkdir phosphotemp && cd phosphotemp && curl -L http://ms.imp.ac.at/index.php?file=phosphors/phosphors-1_3.zip > phosphoRS.zip && unzip phosphoRS.zip && cp IMP.PhosphoRS.dll /galaxy-central/tools/wohl-proteomics/RSmax/IMP.PhosphoRS.dll && \
     cd ../ && rm -rf phosphotemp
 
 
+
+# PATCHES AND FIXES BASED ON HARD REVISIONED PACKAGES
+#
+#
 #Patch listed in https://github.com/galaxyproject/pulsar/issues/125 for directory issues...
 RUN sed -i "s#        pattern = r\"(#        directory = directory.replace('\\\\\\\\','\\\\\\\\\\\\\\\\')\n        pattern = r\"(#g" /galaxy_venv/local/lib/python2.7/site-packages/pulsar/client/staging/up.py
 
 #Modify galaxy.ini to always cleanup...
 RUN sed -i 's/#cleanup_job = always/cleanup_job = always/' /etc/galaxy/galaxy.yml
-
-#USER galaxy
-
-
-#RUN . "$GALAXY_VIRTUAL_ENV/bin/activate" && export PATH=$PATH:/home/galaxy/crux/bin/
-#env PATH /usr/local/rvm/rubies/ruby-2.5.1/bin:/OpenMS-build/bin:$PATH
-RUN python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /home/galaxy/crux/bin/ && python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /usr/local/rvm/rubies/ruby-2.5.1/bin/ && export PATH=/usr/local/rvm/rubies/ruby-2.5.1/bin:$PATH && gem install protk -v 1.4.2
-# && cp -r /usr/local/rvm/rubies/ruby-2.5.1/bin/ /galaxy_venv/bin/
 
 #Gotta give this an absolute path nowadays...
 RUN sed -i "s#ruby#/usr/local/rvm/rubies/ruby-2.5.1/bin/ruby#" /usr/local/rvm/rubies/ruby-2.5.1/lib/ruby/gems/2.5.0/gems/protk-1.4.2/lib/protk/galaxy_stager.rb
