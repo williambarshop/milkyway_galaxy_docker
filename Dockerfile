@@ -63,9 +63,9 @@ RUN curl -L https://github.com/OpenMS/OpenMS/releases/download/Release2.2.0/Open
     cd / && mkdir OpenMS-build && cd OpenMS-build && cmake -DCMAKE_PREFIX_PATH="/galaxy-central/OpenMS-2.2.0/contrib-build;/usr;/usr/local" -DBOOST_USE_STATIC=OFF -DOPENMS_CONTRIB_LIBS=/galaxy-central/OpenMS-2.2.0/contrib-build /galaxy-central/OpenMS-2.2.0/ && \
     make && echo "export LD_LIBRARY_PATH='/OpenMS-build/lib:$LD_LIBRARY_PATH'" >> $HOME/.bashrc && mv /OpenMS-build/bin/* /galaxy_venv/bin/
 
-#INSTALL SOME PYTHON PACKAGES INTO VENV
-RUN . "$GALAXY_VIRTUAL_ENV/bin/activate" && pip install cython && pip install https://pypi.python.org/packages/de/db/7df2929ee9fad94aa9e57071bbca246a42069c0307305e00ce3f2c5e0c1d/pyopenms-2.1.0-cp27-none-manylinux1_x86_64.whl#md5=3c886f9bb4a2569c0d3c8fe29fbff5e1 && pip install numpy==1.13.0 uniprot_tools h5py==2.7.0 ephemeris futures tqdm joblib multiprocessing pandas argparse pyteomics==3.2 natsort tqdm biopython lxml plotly Orange-Bioinformatics -U && \
-    pip install pymzml==0.7.8 && curl -L http://ontologies.berkeleybop.org/ms.obo > /galaxy_venv/local/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.14.obo && cp /galaxy_venv/local/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.14.obo /galaxy_venv/local/lib/python2.7/site-packages/pymzml/obo/psi-ms-23:06:2017.0.0.obo
+#Let's install a few galaxy tools....
+ADD proteomics_toolshed.yml $GALAXY_ROOT/proteomics_toolshed.yml
+RUN install-tools $GALAXY_ROOT/proteomics_toolshed.yml
 
 
 #Installing R packages and MSstats
@@ -77,7 +77,6 @@ RUN touch /etc/bash_completion.d/R;cp /etc/bash_completion.d/R /usr/share/bash-c
 #Installing proteowizard...
 COPY pwiz-bin-linux-x86_64-gcc48-release-3_0_10738.tar.bz2 /bin/pwiz.tar.bz2
 RUN cd /bin/ && tar xvfj pwiz.tar.bz2 && rm pwiz.tar.bz2
-
 
 
 #Installing crux toolkit...
@@ -115,6 +114,26 @@ RUN rm $GALAXY_CONFIG_DIR/job_conf.xml && \
     mv milkyway_proteomics/galaxy_milkyway_files/config/job_conf.xml $GALAXY_CONFIG_DIR/job_conf.xml && \
     head -n -1 $GALAXY_ROOT/config/tool_conf.xml.sample > /home/galaxy/milkyway_tool_conf.xml; head -n -1 /home/galaxy/wohl_tool_conf.xml > /home/galaxy/wohl_tool_tmp.xml; sed -e "1d" /home/galaxy/wohl_tool_tmp.xml > /home/galaxy/wohl_tool_tmp_final.xml; cat /home/galaxy/wohl_tool_tmp_final.xml >> /home/galaxy/milkyway_tool_conf.xml; echo "</toolbox>" >> /home/galaxy/milkyway_tool_conf.xml; rm /home/galaxy/wohl_tool_tmp.xml; rm /home/galaxy/wohl_tool_tmp_final.xml
 
+## INSTALL WORKFLOWS AND TOOLBOX TOOLS INTO GALAXY ##
+#and installing python packages...
+COPY replace_workflow_id.py /galaxy-central/replace_workflow_id.py
+COPY patch_msconvert.py /galaxy-central/patch_msconvert.py
+RUN startup_lite && \
+    sleep 25 && \
+    pip install ephemeris && \
+    python /galaxy-central/replace_workflow_id.py --apikey admin --galaxy_address 127.0.0.1:8080 --workflow_folder /galaxy-central/milkyway_proteomics/workflows/ --old_tool_string msconvert_win --job_conf $GALAXY_CONFIG_DIR/job_conf.xml && \
+    python /galaxy-central/replace_workflow_id.py --apikey admin --galaxy_address 127.0.0.1:8080 --workflow_folder /galaxy-central/milkyway_proteomics/workflows/ --old_tool_string DecoyDatabase && \
+    python /galaxy-central/patch_msconvert.py --apikey admin --galaxy_address 127.0.0.1:8080 --tool_string msconvert_win && \
+    workflow-install --workflow_path /galaxy-central/milkyway_proteomics/workflows/ -g http://localhost:8080 -u admin@galaxy.org -p admin
+
+   
+#INSTALL SOME PYTHON PACKAGES INTO VENV
+RUN . "$GALAXY_VIRTUAL_ENV/bin/activate" && pip install cython && pip install https://pypi.python.org/packages/de/db/7df2929ee9fad94aa9e57071bbca246a42069c0307305e00ce3f2c5e0c1d/pyopenms-2.1.0-cp27-none-manylinux1_x86_64.whl#md5=3c886f9bb4a2569c0d3c8fe29fbff5e1 && pip install numpy==1.13.0 uniprot_tools h5py==2.7.0 ephemeris futures tqdm joblib multiprocessing pandas argparse pyteomics==3.2 natsort tqdm biopython lxml plotly Orange-Bioinformatics -U && \
+    pip install pymzml==0.7.8 && curl -L http://ontologies.berkeleybop.org/ms.obo > /galaxy_venv/local/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.14.obo && cp /galaxy_venv/local/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.14.obo /galaxy_venv/local/lib/python2.7/site-packages/pymzml/obo/psi-ms-23:06:2017.0.0.obo
+
+    
+    
+
 
 #Building Fido...
 RUN wget https://noble.gs.washington.edu/proj/fido/fido.tgz && tar xzvf fido.tgz && rm fido.tgz && cd fido/src/cpp/ && mkdir ../../bin && make && \
@@ -138,10 +157,6 @@ GALAXY_CONFIG_FILE=$GALAXY_CONFIG_DIR/galaxy.yml \
 GALAXY_CONFIG_TOOL_CONFIG_FILE=/home/galaxy/milkyway_tool_conf.xml,$GALAXY_ROOT/config/shed_tool_conf.xml.sample  \
 NONUSE=slurmd,slurmctld
 
-#Let's install a few galaxy tools....
-ADD proteomics_toolshed.yml $GALAXY_ROOT/proteomics_toolshed.yml
-RUN install-tools $GALAXY_ROOT/proteomics_toolshed.yml
-
 #Let's set up DIA-Umpire
 RUN cd /galaxy-central/tools/wohl-proteomics/diaumpire/ ; wget https://github.com/Nesvilab/DIA-Umpire/releases/download/v2.1.2/v2.1.2.zip ; unzip v2.1.2.zip ; rm v2.1.2.zip
 #We'll need the ptmRS dll file...
@@ -164,17 +179,7 @@ RUN curl -L https://sourceforge.net/projects/saint-apms/files/saintq_v0.0.4.tar.
 RUN wget https://github.com/percolator/percolator/releases/download/rel-3-01/ubuntu64_release.tar.gz && tar xzvf ubuntu64_release.tar.gz && rm ubuntu64_release.tar.gz && dpkg -i percolator-converters-v3-01-linux-amd64.deb && dpkg -i elude-v3-01-linux-amd64.deb && apt-get install -f && rm percolator-converters-v3-01-linux-amd64.deb percolator-noxml-v3-01-linux-amd64.deb percolator-v3-01-linux-amd64.deb elude-v3-01-linux-amd64.deb
 
 
-## INSTALL WORKFLOWS AND TOOLBOX TOOLS INTO GALAXY ##
-#and installing python packages...
-COPY replace_workflow_id.py /galaxy-central/replace_workflow_id.py
-COPY patch_msconvert.py /galaxy-central/patch_msconvert.py
-RUN startup_lite && \
-    sleep 45 && \
-    pip install ephemeris && \
-    python /galaxy-central/replace_workflow_id.py --apikey admin --galaxy_address 127.0.0.1:8080 --workflow_folder /galaxy-central/milkyway_proteomics/workflows/ --old_tool_string msconvert_win --job_conf $GALAXY_CONFIG_DIR/job_conf.xml && \
-    python /galaxy-central/replace_workflow_id.py --apikey admin --galaxy_address 127.0.0.1:8080 --workflow_folder /galaxy-central/milkyway_proteomics/workflows/ --old_tool_string DecoyDatabase && \
-    python /galaxy-central/patch_msconvert.py --apikey admin --galaxy_address 127.0.0.1:8080 --tool_string msconvert_win && \
-    workflow-install --workflow_path /galaxy-central/milkyway_proteomics/workflows/ -g http://localhost:8080 -u admin@galaxy.org -p admin
+
 
 
 #We need to grab the phosphoRS dll file and unpack it...
@@ -193,8 +198,7 @@ RUN sed -i "s#        pattern = r\"(#        directory = directory.replace('\\\\
 RUN sed -i 's/#cleanup_job = always/cleanup_job = always/' /etc/galaxy/galaxy.yml
 
 #Gotta give this an absolute path nowadays...
-RUN sed -i "s#ruby#/usr/local/rvm/rubies/ruby-2.5.1/bin/ruby#" /usr/local/rvm/rubies/ruby-2.5.1/lib/ruby/gems/2.5.0/gems/protk-1.4.2/lib/protk/galaxy_stager.rb
-
+RUN sed -i "s#ruby#/usr/local/rvm/rubies/ruby-2.5.1/bin/ruby#" /usr/local/rvm/gems/ruby-2.5.1/gems/protk-1.4.2/lib/protk/galaxy_stager.rb
 
 
 VOLUME ["/export/","/data/","/var/lib/docker"]
