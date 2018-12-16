@@ -1,4 +1,4 @@
-FROM bgruening/galaxy-stable:18.01
+FROM bgruening/galaxy-stable:latest
 
 MAINTAINER William Barshop, wbarshop@ucla.edu
 
@@ -8,8 +8,9 @@ RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E03280
     echo "deb http://download.mono-project.com/repo/debian wheezy main" | sudo tee /etc/apt/sources.list.d/mono-xamarin.list && \
     apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9;sh -c 'echo "deb http://cran.rstudio.com/bin/linux/ubuntu trusty/" >> /etc/apt/sources.list';apt-get update --yes --force-yes; \
     apt-get install software-properties-common; add-apt-repository ppa:george-edison55/cmake-3.x ; apt-get update --yes
-#Installing Milkyway dependencies... and a few things to help debug, and wine
-RUN apt-get install -y \
+
+RUN apt-get update --yes && \
+    apt-get install -y \
 	pigz \
 	git \
 	ed \
@@ -22,16 +23,16 @@ RUN apt-get install -y \
 	libcairo2-dev \
 	libxml2-dev \
 	mono-complete \
-        unzip \
-        nano \
+    unzip \
+    nano \
 	screen \
-        build-essential \
-        autoconf \
-        patch \
-        libtool \
-        automake \
-        cmake3 \
-        python-software-properties \
+    build-essential \
+    autoconf \
+    patch \
+    libtool \
+    automake \
+    cmake3 \
+    python-software-properties \
 	software-properties-common
 
 #Installing wine....
@@ -50,11 +51,12 @@ RUN gpg --keyserver hkp://keyserver.ubuntu.com --recv-keys 409B6B1796C275462A170
     /bin/bash -c "source /usr/local/rvm/scripts/rvm && gem install protk -v 1.4.2" && \
     sudo usermod -a -G rvm galaxy
 
+
 #scripts to handle galaxy supervisor paths and env values
 ADD add_to_galaxy_path.py /galaxy-central/add_to_galaxy_path.py
 ADD add_to_galaxy_env.py /galaxy-central/add_to_galaxy_env.py
-
 RUN python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /usr/local/rvm/rubies/ruby-2.5.1/bin/ /OpenMS-build/bin/ /home/galaxy/crux/bin/
+
 
 #installation of OpenMS 2.2.0.
 RUN apt-get install build-essential autoconf patch libtool automake qt4-default libqtwebkit-dev libeigen3-dev libxerces-c-dev libboost-all-dev libsvn-dev libbz2-dev cmake3 -y
@@ -63,6 +65,7 @@ RUN curl -L https://github.com/OpenMS/OpenMS/releases/download/Release2.2.0/Open
     cd / && mkdir OpenMS-build && cd OpenMS-build && cmake -DCMAKE_PREFIX_PATH="/galaxy-central/OpenMS-2.2.0/contrib-build;/usr;/usr/local" -DBOOST_USE_STATIC=OFF -DOPENMS_CONTRIB_LIBS=/galaxy-central/OpenMS-2.2.0/contrib-build /galaxy-central/OpenMS-2.2.0/ && \
     make && echo "export LD_LIBRARY_PATH='/OpenMS-build/lib:$LD_LIBRARY_PATH'" >> $HOME/.bashrc && mv /OpenMS-build/bin/* /galaxy_venv/bin/
 
+    
 #Let's install a few galaxy tools....
 ADD proteomics_toolshed.yml $GALAXY_ROOT/proteomics_toolshed.yml
 RUN install-tools $GALAXY_ROOT/proteomics_toolshed.yml
@@ -74,7 +77,8 @@ RUN touch /etc/bash_completion.d/R;cp /etc/bash_completion.d/R /usr/share/bash-c
     R -e "source('https://bioconductor.org/biocLite.R');biocLite(c('limma','marray','preprocessCore','MSnbase'),ask=FALSE)" && \
     wget "http://msstats.org/wp-content/uploads/2017/09/MSstats_3.9.2.tar.gz";R -e "install.packages('MSstats_3.9.2.tar.gz',type='source', repos=NULL)"; rm MSstats_3.9.2.tar.gz
 
-#Installing proteowizard...
+    
+#Installing proteowizard binaries...
 COPY pwiz-bin-linux-x86_64-gcc48-release-3_0_10738.tar.bz2 /bin/pwiz.tar.bz2
 RUN cd /bin/ && tar xvfj pwiz.tar.bz2 && rm pwiz.tar.bz2
 
@@ -132,16 +136,11 @@ RUN . "$GALAXY_VIRTUAL_ENV/bin/activate" && pip install cython && pip install ht
     pip install pymzml==0.7.8 && curl -L http://ontologies.berkeleybop.org/ms.obo > /galaxy_venv/local/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.14.obo && cp /galaxy_venv/local/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.14.obo /galaxy_venv/local/lib/python2.7/site-packages/pymzml/obo/psi-ms-23:06:2017.0.0.obo
 
     
-    
-
-
 #Building Fido...
 RUN wget https://noble.gs.washington.edu/proj/fido/fido.tgz && tar xzvf fido.tgz && rm fido.tgz && cd fido/src/cpp/ && mkdir ../../bin && make && \
     mv ../../bin/FidoChooseParameters /galaxy-central/tools/wohl-proteomics/fido/FidoChooseParameters && \
     mv ../../bin/Fido /galaxy-central/tools/wohl-proteomics/fido/Fido && \
     cd ../../../ && rm -rf fido && rm -rf bin
-
-
 
 
 #Set up environment variables for galaxy docker...
@@ -159,27 +158,31 @@ NONUSE=slurmd,slurmctld
 
 #Let's set up DIA-Umpire
 RUN cd /galaxy-central/tools/wohl-proteomics/diaumpire/ ; wget https://github.com/Nesvilab/DIA-Umpire/releases/download/v2.1.2/v2.1.2.zip ; unzip v2.1.2.zip ; rm v2.1.2.zip
+
+
 #We'll need the ptmRS dll file...
-RUN wget http://ms.imp.ac.at/data/ptmrs/ptmrs-2_x.zip; unzip ptmrs-2_x.zip;mv IMP.ptmRS.dll /galaxy-central/tools/wohl-proteomics/ptmRSmax/;rm IMP.ptmRSNode.dll;rm IMP.ptmRSConf.xml;rm ptmrs-2_x.zip
+#RUN wget http://ms.imp.ac.at/data/ptmrs/ptmrs-2_x.zip; unzip ptmrs-2_x.zip;mv IMP.ptmRS.dll /galaxy-central/tools/wohl-proteomics/ptmRSmax/;rm IMP.ptmRSNode.dll;rm IMP.ptmRSConf.xml;rm ptmrs-2_x.zip
+
 
 #Let's get MSPLIT-DIA
 RUN cd /galaxy-central/tools/wohl-proteomics/msplit-dia/ ; wget http://proteomics.ucsd.edu/Software/MSPLIT-DIA/MSPLIT-DIAv1.0.zip; unzip MSPLIT-DIAv1.0.zip ; rm MSPLIT-DIAv1.0.zip ; mv MSPLIT-DIAv1.0/* . ; rm -rf MSPLIT-DIAv1.0
 ADD MSPLIT-DIAv07192015.jar /galaxy-central/tools/wohl-proteomics/msplit-dia/
 
+
 #Set up for galaxy XML files...
 RUN cp /galaxy-central/config/dependency_resolvers_conf.xml.sample /galaxy-central/config/dependency_resolvers_conf.xml
+
 
 #SET UP SAINTexpress
 RUN wget https://downloads.sourceforge.net/project/saint-apms/SAINTexpress_v3.6.1__2015-05-03.zip;unzip SAINTexpress_v3.6.1__2015-05-03.zip -d /galaxy-central/tools/wohl-proteomics/SAINTexpress/;rm SAINTexpress_v3.6.1__2015-05-03.zip; cp /galaxy-central/tools/wohl-proteomics/SAINTexpress/SAINTexpress_v3.6.1__2015-05-03/Precompiled_binaries/Linux64/* /galaxy-central/tools/wohl-proteomics/SAINTexpress/; rm -rf /galaxy-central/tools/wohl-proteomics/SAINTexpress/SAINTexpress_v3.6.1__2015-05-03/
 
+
 #SET UP SAINTq
 RUN curl -L https://sourceforge.net/projects/saint-apms/files/saintq_v0.0.4.tar.gz/download >saintq.tar.gz && tar xzvf saintq.tar.gz && rm saintq.tar.gz && cd saintq/ && make && mv bin/saintq /bin/ && cd .. && rm -rf saintq/
 
+
 #SET UP PERCOLATOR CONVERTERS
 RUN wget https://github.com/percolator/percolator/releases/download/rel-3-01/ubuntu64_release.tar.gz && tar xzvf ubuntu64_release.tar.gz && rm ubuntu64_release.tar.gz && dpkg -i percolator-converters-v3-01-linux-amd64.deb && dpkg -i elude-v3-01-linux-amd64.deb && apt-get install -f && rm percolator-converters-v3-01-linux-amd64.deb percolator-noxml-v3-01-linux-amd64.deb percolator-v3-01-linux-amd64.deb elude-v3-01-linux-amd64.deb
-
-
-
 
 
 #We need to grab the phosphoRS dll file and unpack it...
