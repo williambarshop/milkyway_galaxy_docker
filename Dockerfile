@@ -46,15 +46,15 @@ sudo apt-get install --install-recommends winehq-stable -y
 
 #Let's handle rvm and protk installation
 RUN gpg --keyserver hkp://keyserver.ubuntu.com --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB && \
-    \curl -sSL https://get.rvm.io | grep -v __rvm_print_headline | bash -s stable --ruby=2.5.1 && \
-    /bin/bash -c "source /usr/local/rvm/scripts/rvm && gem install protk -v 1.4.2"
+    curl -sSL https://get.rvm.io | grep -v __rvm_print_headline | sudo bash -s stable --ruby=2.5.1 && \
+    /bin/bash -c "source /usr/local/rvm/scripts/rvm && gem install protk -v 1.4.2" && \
+    sudo usermod -a -G rvm galaxy
 
 #scripts to handle galaxy supervisor paths and env values
 ADD add_to_galaxy_path.py /galaxy-central/add_to_galaxy_path.py
 ADD add_to_galaxy_env.py /galaxy-central/add_to_galaxy_env.py
 
-RUN python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /usr/local/rvm/rubies/ruby-2.5.1/bin/ /OpenMS-build/bin/ /home/galaxy/crux/bin/ && \
-	python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /usr/local/rvm/rubies/ruby-2.5.1/bin/
+RUN python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /usr/local/rvm/rubies/ruby-2.5.1/bin/ /OpenMS-build/bin/ /home/galaxy/crux/bin/
 
 #installation of OpenMS 2.2.0.
 RUN apt-get install build-essential autoconf patch libtool automake qt4-default libqtwebkit-dev libeigen3-dev libxerces-c-dev libboost-all-dev libsvn-dev libbz2-dev cmake3 -y
