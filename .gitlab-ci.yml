@@ -33,7 +33,7 @@ docker build dev:
   - sed -i s/commit_rev/${CI_COMMIT_SHA:0:8}/ Dockerfile
   - sed -i s/CI_job_ID/$CI_JOB_ID/ Dockerfile
   - docker pull $CONTAINER_IMAGE:ci || true
-  - docker build --cache-from $CONTAINER_IMAGE:cidev -t $CONTAINER_IMAGE:cidev -t $CONTAINER_IMAGE:$CI_COMMIT_SHA .
+  - docker build -t $CONTAINER_IMAGE:cidev -t $CONTAINER_IMAGE:$CI_COMMIT_SHA .
 
 docker push:
   stage: Push to Docker Hub
