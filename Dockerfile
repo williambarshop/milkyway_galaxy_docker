@@ -11,21 +11,21 @@ RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E03280
 
 RUN apt-get update --yes && \
     apt-get install -y \
-	pigz \
-	git \
-	ed \
-	netcdf-bin \
-	nco \
-	libnetcdf-dev \
-	libnetcdfc7 \
-	udunits-bin \
-	libudunits2-dev \
-	libcairo2-dev \
-	libxml2-dev \
-	mono-complete \
+    pigz \
+    git \
+    ed \
+    netcdf-bin \
+    nco \
+    libnetcdf-dev \
+    libnetcdfc7 \
+    udunits-bin \
+    libudunits2-dev \
+    libcairo2-dev \
+    libxml2-dev \
+    mono-complete \
     unzip \
     nano \
-	screen \
+    screen \
     build-essential \
     autoconf \
     patch \
@@ -33,7 +33,7 @@ RUN apt-get update --yes && \
     automake \
     cmake3 \
     python-software-properties \
-	software-properties-common
+    software-properties-common
 
 #Installing wine....
 RUN mv /etc/apt/sources.list.d/htcondor.list temporary_file && \
@@ -71,7 +71,7 @@ ENV GALAXY_CONFIG_BRAND='MilkyWay Proteomics' \
 GALAXY_VIRTUAL_ENV=/galaxy_venv \
 GALAXY_HANDLER_NUMPROCS=4 \
 UWSGI_PROCESSES=4 \
-UWSGI_THREADS=4 \
+UWSGI_THREADS=2 \
 GALAXY_ROOT=/galaxy-central \
 GALAXY_CONFIG_DIR=/etc/galaxy \
 GALAXY_DESTINATIONS_DEFAULT=local \
