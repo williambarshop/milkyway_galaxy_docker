@@ -66,6 +66,20 @@ RUN curl -L https://github.com/OpenMS/OpenMS/releases/download/Release2.2.0/Open
     make && echo "export LD_LIBRARY_PATH='/OpenMS-build/lib:$LD_LIBRARY_PATH'" >> $HOME/.bashrc && mv /OpenMS-build/bin/* /galaxy_venv/bin/
 
     
+#Set up environment variables for galaxy docker...
+ENV GALAXY_CONFIG_BRAND='MilkyWay Proteomics' \
+GALAXY_VIRTUAL_ENV=/galaxy_venv \
+GALAXY_HANDLER_NUMPROCS=4 \
+UWSGI_PROCESSES=4 \
+UWSGI_THREADS=4 \
+GALAXY_ROOT=/galaxy-central \
+GALAXY_CONFIG_DIR=/etc/galaxy \
+GALAXY_DESTINATIONS_DEFAULT=local \
+GALAXY_CONFIG_FILE=$GALAXY_CONFIG_DIR/galaxy.yml \
+GALAXY_CONFIG_TOOL_CONFIG_FILE=/home/galaxy/milkyway_tool_conf.xml,$GALAXY_ROOT/config/shed_tool_conf.xml.sample  \
+NONUSE=slurmd,slurmctld
+
+    
 #Let's install a few galaxy tools....
 ADD proteomics_toolshed.yml $GALAXY_ROOT/proteomics_toolshed.yml
 RUN install-tools $GALAXY_ROOT/proteomics_toolshed.yml
@@ -143,19 +157,6 @@ RUN wget https://noble.gs.washington.edu/proj/fido/fido.tgz && tar xzvf fido.tgz
     cd ../../../ && rm -rf fido && rm -rf bin
 
 
-#Set up environment variables for galaxy docker...
-ENV GALAXY_CONFIG_BRAND='MilkyWay Proteomics' \
-GALAXY_VIRTUAL_ENV=/galaxy_venv \
-GALAXY_HANDLER_NUMPROCS=4 \
-UWSGI_PROCESSES=4 \
-UWSGI_THREADS=4 \
-GALAXY_ROOT=/galaxy-central \
-GALAXY_CONFIG_DIR=/etc/galaxy \
-GALAXY_DESTINATIONS_DEFAULT=local \
-GALAXY_CONFIG_FILE=$GALAXY_CONFIG_DIR/galaxy.yml \
-GALAXY_CONFIG_TOOL_CONFIG_FILE=/home/galaxy/milkyway_tool_conf.xml,$GALAXY_ROOT/config/shed_tool_conf.xml.sample  \
-NONUSE=slurmd,slurmctld
-
 #Let's set up DIA-Umpire
 RUN cd /galaxy-central/tools/wohl-proteomics/diaumpire/ ; wget https://github.com/Nesvilab/DIA-Umpire/releases/download/v2.1.2/v2.1.2.zip ; unzip v2.1.2.zip ; rm v2.1.2.zip
 
@@ -188,7 +189,6 @@ RUN wget https://github.com/percolator/percolator/releases/download/rel-3-01/ubu
 #We need to grab the phosphoRS dll file and unpack it...
 RUN mkdir phosphotemp && cd phosphotemp && curl -L http://ms.imp.ac.at/index.php?file=phosphors/phosphors-1_3.zip > phosphoRS.zip && unzip phosphoRS.zip && cp IMP.PhosphoRS.dll /galaxy-central/tools/wohl-proteomics/RSmax/IMP.PhosphoRS.dll && \
     cd ../ && rm -rf phosphotemp
-
 
 
 # PATCHES AND FIXES BASED ON HARD REVISIONED PACKAGES
