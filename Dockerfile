@@ -2,12 +2,23 @@ FROM bgruening/galaxy-stable:latest
 
 MAINTAINER William Barshop, wbarshop@ucla.edu
 
+#Let's install a few galaxy tools....
+ADD proteomics_toolshed.yml $GALAXY_ROOT/proteomics_toolshed.yml
+RUN cp /galaxy-central/config/dependency_resolvers_conf.xml.sample /galaxy-central/config/dependency_resolvers_conf.xml && \
+    startup_lite && \
+    sleep 25 && \
+    install-tools $GALAXY_ROOT/proteomics_toolshed.yml
+
+    
 #Updating packages and installing R...
 RUN apt-get update --yes --force-yes && apt-get --yes --force-yes install libpango-1.0-0 libbz2-dev;apt-get -f install -y;apt-get --yes --force-yes remove r-base-core r-base
+
+
 RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF && \
     echo "deb http://download.mono-project.com/repo/debian wheezy main" | sudo tee /etc/apt/sources.list.d/mono-xamarin.list && \
     apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9;sh -c 'echo "deb http://cran.rstudio.com/bin/linux/ubuntu trusty/" >> /etc/apt/sources.list';apt-get update --yes --force-yes; \
     apt-get install software-properties-common; add-apt-repository ppa:george-edison55/cmake-3.x ; apt-get update --yes
+
 
 RUN apt-get update --yes && \
     apt-get install -y \
@@ -78,11 +89,6 @@ GALAXY_DESTINATIONS_DEFAULT=local \
 GALAXY_CONFIG_FILE=$GALAXY_CONFIG_DIR/galaxy.yml \
 GALAXY_CONFIG_TOOL_CONFIG_FILE=/home/galaxy/milkyway_tool_conf.xml,$GALAXY_ROOT/config/shed_tool_conf.xml.sample  \
 NONUSE=slurmd,slurmctld
-
-    
-#Let's install a few galaxy tools....
-ADD proteomics_toolshed.yml $GALAXY_ROOT/proteomics_toolshed.yml
-RUN install-tools $GALAXY_ROOT/proteomics_toolshed.yml
 
 
 #Installing R packages and MSstats
@@ -168,10 +174,6 @@ RUN cd /galaxy-central/tools/wohl-proteomics/diaumpire/ ; wget https://github.co
 #Let's get MSPLIT-DIA
 RUN cd /galaxy-central/tools/wohl-proteomics/msplit-dia/ ; wget http://proteomics.ucsd.edu/Software/MSPLIT-DIA/MSPLIT-DIAv1.0.zip; unzip MSPLIT-DIAv1.0.zip ; rm MSPLIT-DIAv1.0.zip ; mv MSPLIT-DIAv1.0/* . ; rm -rf MSPLIT-DIAv1.0
 ADD MSPLIT-DIAv07192015.jar /galaxy-central/tools/wohl-proteomics/msplit-dia/
-
-
-#Set up for galaxy XML files...
-RUN cp /galaxy-central/config/dependency_resolvers_conf.xml.sample /galaxy-central/config/dependency_resolvers_conf.xml
 
 
 #SET UP SAINTexpress
