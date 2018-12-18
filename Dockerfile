@@ -101,7 +101,7 @@ RUN mkdir /galaxy-central/tools/wohl-proteomics/ && \
 
 #Installing Milkyway tools/configurations...
 #The wohl tool conf will be appended with some extras at the end of the docker image build.
-RUN echo 'The milkyway toolset is cloned auotmatically after a triggered pull from commit_rev-CI_job_ID' && git clone https://github.com/wohllab/milkyway_proteomics.git --branch master && \
+RUN echo 'The milkyway toolset was cloned auotmatically after a triggered pull from commit_rev-CI_job_ID' && git clone https://github.com/wohllab/milkyway_proteomics.git --branch master && \
     mv milkyway_proteomics/galaxy_milkyway_files/tool-data/msgfplus_mods.loc $GALAXY_ROOT/tool-data/msgfplus_mods.loc;mv milkyway_proteomics/galaxy_milkyway_files/tool-data/silac_mods.loc $GALAXY_ROOT/tool-data/silac_mods.loc && \
     apt-get update && \
     apt-get install rsync -y && \
@@ -172,13 +172,6 @@ RUN sed -i 's/#cleanup_job = always/cleanup_job = always/' /etc/galaxy/galaxy.ym
 #Gotta give this an absolute path nowadays...
 RUN sed -i "s#ruby#/usr/local/rvm/rubies/ruby-2.5.1/bin/ruby#" /usr/local/rvm/gems/ruby-2.5.1/gems/protk-1.4.2/lib/protk/galaxy_stager.rb
 
-
-VOLUME ["/export/","/data/","/var/lib/docker"]
-
-EXPOSE :80
-EXPOSE :21
-EXPOSE :8800
-
 #Let's install a few galaxy tools....
 ADD proteomics_toolshed.yml $GALAXY_ROOT/proteomics_toolshed.yml
 RUN cp /galaxy-central/config/dependency_resolvers_conf.xml.sample /galaxy-central/config/dependency_resolvers_conf.xml && \
@@ -214,7 +207,12 @@ NONUSE=slurmd,slurmctld
 #UWSGI_THREADS=2 \
 #GALAXY_ROOT=/galaxy-central \
 #GALAXY_CONFIG_DIR=/etc/galaxy \
-#GALAXY_CONFIG_FILE=$GALAXY_CONFIG_DIR/galaxy.yml \
+
+VOLUME ["/export/","/data/","/var/lib/docker"]
+
+EXPOSE :80
+EXPOSE :21
+EXPOSE :8800
 
 
 CMD ["/usr/bin/startup"]
