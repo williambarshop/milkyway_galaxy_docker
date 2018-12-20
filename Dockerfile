@@ -101,7 +101,7 @@ RUN mkdir /galaxy-central/tools/wohl-proteomics/ && \
 
 #Installing Milkyway tools/configurations...
 #The wohl tool conf will be appended with some extras at the end of the docker image build.
-RUN echo 'The milkyway toolset was cloned auotmatically after a triggered pull from commit_rev-CI_job_ID' && git clone https://github.com/wohllab/milkyway_proteomics.git --branch master && \
+RUN echo "The milkyway toolset was cloned auotmatically after a triggered pull from commit_rev-CI_job_ID"  && git clone https://github.com/wohllab/milkyway_proteomics.git --branch master && \
     mv milkyway_proteomics/galaxy_milkyway_files/tool-data/msgfplus_mods.loc $GALAXY_ROOT/tool-data/msgfplus_mods.loc;mv milkyway_proteomics/galaxy_milkyway_files/tool-data/silac_mods.loc $GALAXY_ROOT/tool-data/silac_mods.loc && \
     apt-get update && \
     apt-get install rsync -y && \
@@ -160,6 +160,8 @@ RUN mkdir phosphotemp && cd phosphotemp && curl -L http://ms.imp.ac.at/index.php
     cd ../ && rm -rf phosphotemp
 
 
+
+
 # PATCHES AND FIXES BASED ON HARD REVISIONED PACKAGES
 #
 #
@@ -190,18 +192,17 @@ RUN startup_lite && \
     workflow-install --workflow_path /galaxy-central/milkyway_proteomics/workflows/ -g http://localhost:8080 -u admin@galaxy.org -p admin
 
 #The second is the tool_conf xml
-RUN rm $GALAXY_CONFIG_DIR/job_conf.xml && \
-    mv milkyway_proteomics/galaxy_milkyway_files/config/job_conf.xml $GALAXY_CONFIG_DIR/job_conf.xml && \
+RUN cp milkyway_proteomics/galaxy_milkyway_files/config/job_conf.xml $GALAXY_CONFIG_DIR/job_conf.xml && \
     head -n -1 $GALAXY_ROOT/config/tool_conf.xml.sample > /home/galaxy/milkyway_tool_conf.xml; head -n -1 /home/galaxy/wohl_tool_conf.xml > /home/galaxy/wohl_tool_tmp.xml; sed -e "1d" /home/galaxy/wohl_tool_tmp.xml > /home/galaxy/wohl_tool_tmp_final.xml; cat /home/galaxy/wohl_tool_tmp_final.xml >> /home/galaxy/milkyway_tool_conf.xml; echo "</toolbox>" >> /home/galaxy/milkyway_tool_conf.xml; rm /home/galaxy/wohl_tool_tmp.xml; rm /home/galaxy/wohl_tool_tmp_final.xml
 
 
-
 #Set up environment variables for galaxy docker...
-ENV GALAXY_CONFIG_BRAND='MilkyWay Proteomics' \
+ENV GALAXY_CONFIG_BRAND='MilkyWay' \
 GALAXY_VIRTUAL_ENV=/galaxy_venv \
-GALAXY_DESTINATIONS_DEFAULT=local \
-GALAXY_CONFIG_TOOL_CONFIG_FILE=/home/galaxy/milkyway_tool_conf.xml,$GALAXY_ROOT/config/shed_tool_conf.xml \
-NONUSE=slurmd,slurmctld
+GALAXY_CONFIG_TOOL_CONFIG_FILE=/home/galaxy/milkyway_tool_conf.xml,$GALAXY_ROOT/config/shed_tool_conf.xml
+#l_no_container
+#GALAXY_DESTINATIONS_DEFAULT=local_no_container \
+#NONUSE=slurmd,slurmctld
 #GALAXY_HANDLER_NUMPROCS=4 \
 #UWSGI_PROCESSES=4 \
 #UWSGI_THREADS=2 \
@@ -216,4 +217,5 @@ EXPOSE :8800
 
 
 CMD ["/usr/bin/startup"]
+
 
