@@ -12,8 +12,8 @@ RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E03280
     apt-get install software-properties-common; add-apt-repository ppa:george-edison55/cmake-3.x ; apt-get update --yes
 
 
-RUN apt-get update --yes && \
-    apt-get install -y \
+RUN apt-get update --yes --force-yes && \
+    apt-get install -y --force-yes \
     pigz \
     git \
     ed \
@@ -45,7 +45,7 @@ wget https://dl.winehq.org/wine-builds/Release.key && \
 sudo apt-key add Release.key && \
 sudo apt-add-repository https://dl.winehq.org/wine-builds/ubuntu/ && \
 apt-get update && \
-sudo apt-get install --install-recommends winehq-stable -y
+sudo apt-get install --install-recommends winehq-stable -y --force-yes
 
 
 #Let's handle rvm and protk installation
@@ -62,7 +62,7 @@ RUN python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.c
 
 
 #installation of OpenMS 2.2.0.
-RUN apt-get install build-essential autoconf patch libtool automake qt4-default libqtwebkit-dev libeigen3-dev libxerces-c-dev libboost-all-dev libsvn-dev libbz2-dev cmake3 -y
+RUN apt-get install build-essential autoconf patch libtool automake qt4-default libqtwebkit-dev libeigen3-dev libxerces-c-dev libboost-all-dev libsvn-dev libbz2-dev cmake3 -y --force-yes
 RUN curl -L https://github.com/OpenMS/OpenMS/releases/download/Release2.2.0/OpenMS-2.2.0-src.zip > OpenMS-2.2.0-src.zip && unzip OpenMS-2.2.0-src.zip && rm OpenMS-2.2.0-src.zip && mv archive/* . && rm -rf archive/ && cd OpenMS-2.2.0/ && mkdir contrib-build && cd contrib-build && \
     cmake -DBUILD_TYPE=ALL -DNUMBER_OF_JOBS=8 ../contrib && \
     cd / && mkdir OpenMS-build && cd OpenMS-build && cmake -DCMAKE_PREFIX_PATH="/galaxy-central/OpenMS-2.2.0/contrib-build;/usr;/usr/local" -DBOOST_USE_STATIC=OFF -DOPENMS_CONTRIB_LIBS=/galaxy-central/OpenMS-2.2.0/contrib-build /galaxy-central/OpenMS-2.2.0/ && \
@@ -101,7 +101,7 @@ RUN mkdir /galaxy-central/tools/wohl-proteomics/ && \
 
 #Installing Milkyway tools/configurations...
 #The wohl tool conf will be appended with some extras at the end of the docker image build.
-RUN echo "The milkyway toolset was cloned auotmatically after a triggered pull from commit_rev-CI_job_ID"  && git clone https://github.com/wohllab/milkyway_proteomics.git --branch master && \
+RUN echo "The milkyway toolset was cloned auotmatically after a triggered pull from commit_rev-CI_job_ID."  && git clone https://github.com/wohllab/milkyway_proteomics.git --branch master && \
     mv milkyway_proteomics/galaxy_milkyway_files/tool-data/msgfplus_mods.loc $GALAXY_ROOT/tool-data/msgfplus_mods.loc;mv milkyway_proteomics/galaxy_milkyway_files/tool-data/silac_mods.loc $GALAXY_ROOT/tool-data/silac_mods.loc && \
     apt-get update && \
     apt-get install rsync -y && \
@@ -120,7 +120,8 @@ RUN echo "The milkyway toolset was cloned auotmatically after a triggered pull f
 
 #INSTALL SOME PYTHON PACKAGES INTO VENV
 RUN . "$GALAXY_VIRTUAL_ENV/bin/activate" && pip install cython && pip install https://pypi.python.org/packages/de/db/7df2929ee9fad94aa9e57071bbca246a42069c0307305e00ce3f2c5e0c1d/pyopenms-2.1.0-cp27-none-manylinux1_x86_64.whl#md5=3c886f9bb4a2569c0d3c8fe29fbff5e1 && pip install numpy==1.13.0 uniprot_tools h5py==2.7.0 ephemeris futures tqdm joblib multiprocessing pandas argparse pyteomics==3.2 natsort tqdm biopython lxml plotly Orange-Bioinformatics -U && \
-    pip install pymzml==0.7.8 && curl -L http://ontologies.berkeleybop.org/ms.obo > /galaxy_venv/local/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.14.obo && cp /galaxy_venv/local/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.14.obo /galaxy_venv/local/lib/python2.7/site-packages/pymzml/obo/psi-ms-23:06:2017.0.0.obo
+    pip install pymzml==0.7.8 
+RUN ls /galaxy_venv/lib/python2.7/site-packages/ && curl -L http://ontologies.berkeleybop.org/ms.obo > /galaxy_venv/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.14.obo && cp /galaxy_venv/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.14.obo /galaxy_venv/lib/python2.7/site-packages/pymzml/obo/psi-ms-23:06:2017.0.0.obo
 
     
 #Building Fido...
@@ -131,7 +132,9 @@ RUN wget https://noble.gs.washington.edu/proj/fido/fido.tgz && tar xzvf fido.tgz
 
 
 #Let's set up DIA-Umpire
-RUN cd /galaxy-central/tools/wohl-proteomics/diaumpire/ ; wget https://github.com/Nesvilab/DIA-Umpire/releases/download/v2.1.2/v2.1.2.zip ; unzip v2.1.2.zip ; rm v2.1.2.zip
+#RUN cd /galaxy-central/tools/wohl-proteomics/diaumpire/ ; wget https://cytranet.dl.sourceforge.net/project/diaumpire/JAR%20executables/DIA-Umpire_v2_0.zip ; unzip DIA-Umpire_v2_0.zip ; rm DIA-Umpire_v2_0.zip ; ls ; sleep 600
+RUN cd /galaxy-central/tools/wohl-proteomics/diaumpire/ ; wget https://github.com/guoci/DIA-Umpire/releases/download/v2.1.3/v2.1.3.zip ; unzip v2.1.3.zip ; rm v2.1.3.zip
+#RUN cd /galaxy-central/tools/wohl-proteomics/diaumpire/ ; wget https://github.com/Nesvilab/DIA-Umpire/releases/download/v2.1.2/v2.1.2.zip ; unzip v2.1.2.zip ; rm v2.1.2.zip
 
 
 #We'll need the ptmRS dll file...
@@ -166,7 +169,7 @@ RUN mkdir phosphotemp && cd phosphotemp && curl -L http://ms.imp.ac.at/index.php
 #
 #
 #Patch listed in https://github.com/galaxyproject/pulsar/issues/125 for directory issues...
-RUN sed -i "s#        pattern = r\"(#        directory = directory.replace('\\\\\\\\','\\\\\\\\\\\\\\\\')\n        pattern = r\"(#g" /galaxy_venv/local/lib/python2.7/site-packages/pulsar/client/staging/up.py
+RUN sed -i "s#        pattern = r\"(#        directory = directory.replace('\\\\\\\\','\\\\\\\\\\\\\\\\')\n        pattern = r\"(#g" /galaxy_venv/lib/python2.7/site-packages/pulsar/client/staging/up.py
 
 #Modify galaxy.ini to always cleanup...
 RUN sed -i 's/#cleanup_job = always/cleanup_job = always/' /etc/galaxy/galaxy.yml
