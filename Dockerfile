@@ -101,7 +101,7 @@ RUN mkdir /galaxy-central/tools/wohl-proteomics/ && \
 
 #Installing Milkyway tools/configurations...
 #The wohl tool conf will be appended with some extras at the end of the docker image build.
-RUN echo "The milkyway toolset was cloned auotmatically after a triggered pull from commit_rev-CI_job_ID."  && git clone https://github.com/wohllab/milkyway_proteomics.git --branch master && \
+RUN echo "The milkyway toolset was cloned auotmatically after a triggered pull from commit_rev-CI_job_ID on DATE-REPLACE"  && git clone https://github.com/wohllab/milkyway_proteomics.git --branch master && \
     mv milkyway_proteomics/galaxy_milkyway_files/tool-data/msgfplus_mods.loc $GALAXY_ROOT/tool-data/msgfplus_mods.loc;mv milkyway_proteomics/galaxy_milkyway_files/tool-data/silac_mods.loc $GALAXY_ROOT/tool-data/silac_mods.loc && \
     apt-get update && \
     apt-get install rsync -y && \
@@ -161,8 +161,6 @@ RUN wget https://github.com/percolator/percolator/releases/download/rel-3-01/ubu
 #We need to grab the phosphoRS dll file and unpack it...
 RUN mkdir phosphotemp && cd phosphotemp && curl -L http://ms.imp.ac.at/index.php?file=phosphors/phosphors-1_3.zip > phosphoRS.zip && unzip phosphoRS.zip && cp IMP.PhosphoRS.dll /galaxy-central/tools/wohl-proteomics/RSmax/IMP.PhosphoRS.dll && \
     cd ../ && rm -rf phosphotemp
-
-
 
 
 # PATCHES AND FIXES BASED ON HARD REVISIONED PACKAGES
