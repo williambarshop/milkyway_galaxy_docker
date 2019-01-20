@@ -121,14 +121,14 @@ RUN echo "The milkyway toolset was cloned auotmatically after a triggered pull f
 #INSTALL SOME PYTHON PACKAGES INTO VENV
 RUN . "$GALAXY_VIRTUAL_ENV/bin/activate" && pip install cython && pip install https://pypi.python.org/packages/de/db/7df2929ee9fad94aa9e57071bbca246a42069c0307305e00ce3f2c5e0c1d/pyopenms-2.1.0-cp27-none-manylinux1_x86_64.whl#md5=3c886f9bb4a2569c0d3c8fe29fbff5e1 && pip install numpy==1.13.0 uniprot_tools h5py==2.7.0 ephemeris futures tqdm joblib multiprocessing pandas argparse pyteomics==3.2 natsort tqdm biopython lxml plotly Orange-Bioinformatics -U && \
     pip install pymzml==0.7.8 
-RUN ls /galaxy_venv/lib/python2.7/site-packages/ && curl -L http://ontologies.berkeleybop.org/ms.obo > /galaxy_venv/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.14.obo && cp /galaxy_venv/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.14.obo /galaxy_venv/lib/python2.7/site-packages/pymzml/obo/psi-ms-23:06:2017.0.0.obo
+RUN ls /galaxy_venv/lib/python2.7/site-packages/ && curl -L http://ontologies.berkeleybop.org/ms.obo > /galaxy_venv/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.14.obo && cp /galaxy_venv/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.14.obo /galaxy_venv/lib/python2.7/site-packages/pymzml/obo/psi-ms-23:06:2017.0.0.obo && cp /galaxy_venv/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.14.obo /galaxy_venv/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.1.1.obo
 
     
 #Building Fido...
-RUN wget https://noble.gs.washington.edu/proj/fido/fido.tgz && tar xzvf fido.tgz && rm fido.tgz && cd fido/src/cpp/ && mkdir ../../bin && make && \
-    mv ../../bin/FidoChooseParameters /galaxy-central/tools/wohl-proteomics/fido/FidoChooseParameters && \
-    mv ../../bin/Fido /galaxy-central/tools/wohl-proteomics/fido/Fido && \
-    cd ../../../ && rm -rf fido && rm -rf bin
+#RUN wget https://noble.gs.washington.edu/proj/fido/fido.tgz && tar xzvf fido.tgz && rm fido.tgz && cd fido/src/cpp/ && mkdir ../../bin && make && \
+#    mv ../../bin/FidoChooseParameters /galaxy-central/tools/wohl-proteomics/fido/FidoChooseParameters && \
+#    mv ../../bin/Fido /galaxy-central/tools/wohl-proteomics/fido/Fido && \
+#    cd ../../../ && rm -rf fido && rm -rf bin
 
 
 #Let's set up DIA-Umpire
