@@ -1,4 +1,4 @@
-FROM bgruening/galaxy-stable:latest
+FROM bgruening/galaxy-stable:18.05
 
 MAINTAINER William Barshop, wbarshop@ucla.edu
 
@@ -83,7 +83,7 @@ RUN cd /bin/ && tar xvfj pwiz.tar.bz2 && rm pwiz.tar.bz2
 
 #Installing crux toolkit...
 RUN git config --global user.email "docker@localhost" ; git config --global user.name "docker" && \
-    git clone https://github.com/crux-toolkit/crux-toolkit.git crux-toolkit;cd crux-toolkit;cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:PATH=~/crux/;make;make install && \
+    git clone https://github.com/crux-toolkit/crux-toolkit.git crux-toolkit -b crux-3.2;cd crux-toolkit;cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:PATH=~/crux/;make;make install && \
     python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /home/galaxy/crux/bin/ && cp /home/galaxy/crux/bin/crux /galaxy_venv/bin/crux
 
 #SET UP BLIBBUILD
