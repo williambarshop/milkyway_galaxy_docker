@@ -1,4 +1,4 @@
-FROM bgruening/galaxy-stable:18.05
+FROM bgruening/galaxy-stable:latest
 
 MAINTAINER William Barshop, wbarshop@ucla.edu
 
@@ -196,7 +196,7 @@ RUN startup_lite && \
 RUN cp milkyway_proteomics/galaxy_milkyway_files/config/job_conf.xml $GALAXY_CONFIG_DIR/job_conf.xml && \
     head -n -1 $GALAXY_ROOT/config/tool_conf.xml.sample > /home/galaxy/milkyway_tool_conf.xml; head -n -1 /home/galaxy/wohl_tool_conf.xml > /home/galaxy/wohl_tool_tmp.xml; sed -e "1d" /home/galaxy/wohl_tool_tmp.xml > /home/galaxy/wohl_tool_tmp_final.xml; cat /home/galaxy/wohl_tool_tmp_final.xml >> /home/galaxy/milkyway_tool_conf.xml; echo "</toolbox>" >> /home/galaxy/milkyway_tool_conf.xml; rm /home/galaxy/wohl_tool_tmp.xml; rm /home/galaxy/wohl_tool_tmp_final.xml
 
-
+ADD welcome.html /etc/galaxy/web/welcome.html
 #Set up environment variables for galaxy docker...
 ENV GALAXY_CONFIG_BRAND='MilkyWay' \
 GALAXY_VIRTUAL_ENV=/galaxy_venv \
