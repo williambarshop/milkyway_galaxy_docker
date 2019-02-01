@@ -2,7 +2,9 @@ image: docker:stable
 
 stages:
   - Build image
+  - Build image dev
   - Push to Docker Hub
+  - Push to Docker Hub dev
   - swarm deploy
 
 variables:
@@ -11,11 +13,29 @@ variables:
 
 docker build:
   stage: Build image
+  only:
+  - master
   script:
   - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASSWORD"
   - docker info
+  - sed -i s/commit_rev/${CI_COMMIT_SHA:0:8}/ Dockerfile
+  - sed -i s/CI_job_ID/$CI_JOB_ID/ Dockerfile
+  - sed -i "s/DATE-REPLACE/$(date)/g" Dockerfile
   - docker pull $CONTAINER_IMAGE:ci || true
-  - docker build --cache-from $CONTAINER_IMAGE:ci -t $CONTAINER_IMAGE:ci -t $CONTAINER_IMAGE:$CI_COMMIT_SHA .
+  - docker build --cache-from $CONTAINER_IMAGE:ci -t $CONTAINER_IMAGE:ci -t $CONTAINER_IMAGE:${CI_COMMIT_SHA:0:8} .
+
+docker build dev:
+  stage: Build image dev
+  except:
+  - master
+  script:
+  - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASSWORD"
+  - docker info
+  - sed -i s/commit_rev/${CI_COMMIT_SHA:0:8}/ Dockerfile
+  - sed -i s/CI_job_ID/$CI_JOB_ID/ Dockerfile
+  - sed -i "s/DATE-REPLACE/$(date)/g" Dockerfile
+  - docker pull $CONTAINER_IMAGE:ci || true
+  - docker build -t $CONTAINER_IMAGE:cidev -t $CONTAINER_IMAGE:$CI_COMMIT_SHA .
 
 docker push:
   stage: Push to Docker Hub
@@ -25,8 +45,19 @@ docker push:
   - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASSWORD"
   - docker push $CONTAINER_IMAGE:ci
 
+docker push dev:
+  stage: Push to Docker Hub dev
+  except:
+  - master
+  script:
+  - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASSWORD"
+  - docker push $CONTAINER_IMAGE:cidev
+
 docker deploy:
   stage: swarm deploy
+  only:
+  - master
   image: appropriate/curl:latest
   script:
   - curl --request POST --form "token=$CI_JOB_TOKEN" --form ref=master http://gitlab.glitterband/api/v4/projects/3/trigger/pipeline
+
