@@ -8,9 +8,7 @@ RUN apt-get update --yes --force-yes && apt-get --yes --force-yes install libpan
 
 RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF && \
     echo "deb http://download.mono-project.com/repo/debian wheezy main" | sudo tee /etc/apt/sources.list.d/mono-xamarin.list && \
-    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9;sh -c 'echo "deb http://cran.rstudio.com/bin/linux/ubuntu trusty/" >> /etc/apt/sources.list';apt-get update --yes --force-yes; \
-    apt-get install software-properties-common; add-apt-repository ppa:george-edison55/cmake-3.x ; apt-get update --yes
-
+    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9;sh -c 'echo "deb http://cran.rstudio.com/bin/linux/ubuntu trusty/" >> /etc/apt/sources.list'
 
 RUN apt-get update --yes --force-yes && \
     apt-get install -y --force-yes \
@@ -34,9 +32,15 @@ RUN apt-get update --yes --force-yes && \
     patch \
     libtool \
     automake \
-    cmake3 \
     python-software-properties \
     software-properties-common
+
+#Let's get cmake
+ENV CMAKE_ROOT=/home/galaxy/cmake/cmake-3.13.4-Linux-x86_64/
+RUN cd /home/galaxy/ && mkdir cmake/ && cd cmake && \
+    wget https://github.com/Kitware/CMake/releases/download/v3.13.4/cmake-3.13.4-Linux-x86_64.tar.gz -O cmake.tar.gz && \
+    tar xzvf cmake.tar.gz && \
+    rm cmake.tar.gz && cd cmake-3.13.4-Linux-x86_64 && cp -r share/* /usr/share/ && cp bin/* /usr/bin/
 
 #Installing wine....
 RUN mv /etc/apt/sources.list.d/htcondor.list temporary_file && \
@@ -62,7 +66,7 @@ RUN python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.c
 
 
 #installation of OpenMS 2.2.0.
-RUN apt-get install build-essential autoconf patch libtool automake qt4-default libqtwebkit-dev libeigen3-dev libxerces-c-dev libboost-all-dev libsvn-dev libbz2-dev cmake3 -y --force-yes
+RUN apt-get install build-essential autoconf patch libtool automake qt4-default libqtwebkit-dev libeigen3-dev libxerces-c-dev libboost-all-dev libsvn-dev libbz2-dev -y --force-yes
 RUN curl -L https://github.com/OpenMS/OpenMS/releases/download/Release2.2.0/OpenMS-2.2.0-src.zip > OpenMS-2.2.0-src.zip && unzip OpenMS-2.2.0-src.zip && rm OpenMS-2.2.0-src.zip && mv archive/* . && rm -rf archive/ && cd OpenMS-2.2.0/ && mkdir contrib-build && cd contrib-build && \
     cmake -DBUILD_TYPE=ALL -DNUMBER_OF_JOBS=8 ../contrib && \
     cd / && mkdir OpenMS-build && cd OpenMS-build && cmake -DCMAKE_PREFIX_PATH="/galaxy-central/OpenMS-2.2.0/contrib-build;/usr;/usr/local" -DBOOST_USE_STATIC=OFF -DOPENMS_CONTRIB_LIBS=/galaxy-central/OpenMS-2.2.0/contrib-build /galaxy-central/OpenMS-2.2.0/ && \
@@ -83,7 +87,7 @@ RUN cd /bin/ && tar xvfj pwiz.tar.bz2 && rm pwiz.tar.bz2
 
 #Installing crux toolkit...
 RUN git config --global user.email "docker@localhost" ; git config --global user.name "docker" && \
-    git clone https://github.com/crux-toolkit/crux-toolkit.git crux-toolkit -b crux-3.2;cd crux-toolkit;cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:PATH=~/crux/;make;make install && \
+    git clone https://github.com/crux-toolkit/crux-toolkit.git crux-toolkit && cd crux-toolkit && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:PATH=~/crux/ && make && make install && \
     python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /home/galaxy/crux/bin/ && cp /home/galaxy/crux/bin/crux /galaxy_venv/bin/crux
 
 #SET UP BLIBBUILD
