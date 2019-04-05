@@ -149,13 +149,20 @@ RUN cd /galaxy-central/tools/wohl-proteomics/diaumpire/ ; wget https://github.co
 RUN cd /galaxy-central/tools/wohl-proteomics/msplit-dia/ ; wget http://proteomics.ucsd.edu/Software/MSPLIT-DIA/MSPLIT-DIAv1.0.zip; unzip MSPLIT-DIAv1.0.zip ; rm MSPLIT-DIAv1.0.zip ; mv MSPLIT-DIAv1.0/* . ; rm -rf MSPLIT-DIAv1.0
 ADD MSPLIT-DIAv07192015.jar /galaxy-central/tools/wohl-proteomics/msplit-dia/
 
+#And while we're at it, we'll get Specter
+RUN cd /galaxy-central/tools/wohl-proteomics/specter/ && \
+    git clone https://github.com/rpeckner-broad/Specter.git && \
+    cd Specter && \
+    conda env create -f SpecterEnv.yml && \
+    wget http://data.bioontology.org/ontologies/MS/submissions/116/download?apikey=8b5b7825-538d-40e0-9e9e-5ab9274a9aeb && \
+    mv download?apikey=8b5b7825-538d-40e0-9e9e-5ab9274a9aeb /tool_deps/_conda/envs/SpecterEnv/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.1.obo
 
 #SET UP SAINTexpress
 RUN wget https://downloads.sourceforge.net/project/saint-apms/SAINTexpress_v3.6.1__2015-05-03.zip;unzip SAINTexpress_v3.6.1__2015-05-03.zip -d /galaxy-central/tools/wohl-proteomics/SAINTexpress/;rm SAINTexpress_v3.6.1__2015-05-03.zip; cp /galaxy-central/tools/wohl-proteomics/SAINTexpress/SAINTexpress_v3.6.1__2015-05-03/Precompiled_binaries/Linux64/* /galaxy-central/tools/wohl-proteomics/SAINTexpress/; rm -rf /galaxy-central/tools/wohl-proteomics/SAINTexpress/SAINTexpress_v3.6.1__2015-05-03/
 
 
 #SET UP SAINTq
-RUN curl -L https://sourceforge.net/projects/saint-apms/files/saintq_v0.0.4.tar.gz/download >saintq.tar.gz && tar xzvf saintq.tar.gz && rm saintq.tar.gz && cd saintq/ && make && mv bin/saintq /bin/ && cd .. && rm -rf saintq/
+RUN curl -L http://sourceforge.net/projects/saint-apms/files/saintq_v0.0.4.tar.gz/download >saintq.tar.gz && tar xzvf saintq.tar.gz && rm saintq.tar.gz && cd saintq/ && make && mv bin/saintq /bin/ && cd .. && rm -rf saintq/
 
 
 #SET UP PERCOLATOR CONVERTERS
