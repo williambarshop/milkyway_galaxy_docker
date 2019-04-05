@@ -155,8 +155,8 @@ ADD MSPLIT-DIAv07192015.jar /galaxy-central/tools/wohl-proteomics/msplit-dia/
 RUN cd /galaxy-central/tools/wohl-proteomics/specter/ && \
     git clone https://github.com/rpeckner-broad/Specter.git && \
     cd Specter && \
-    conda env create -f SpecterEnv.yml && \
-    conda activate SpecterEnv && \
+    /tool_deps/_conda/condabin/conda env create -f SpecterEnv.yml && \
+    /tool_deps/_conda/condabin/conda activate SpecterEnv && \
     pip install cvxopt && \
     wget http://data.bioontology.org/ontologies/MS/submissions/116/download?apikey=8b5b7825-538d-40e0-9e9e-5ab9274a9aeb && \
     mv download?apikey=8b5b7825-538d-40e0-9e9e-5ab9274a9aeb /tool_deps/_conda/envs/SpecterEnv/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.1.obo && \
