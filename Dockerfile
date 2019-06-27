@@ -1,4 +1,4 @@
-FROM bgruening/galaxy-stable:latest
+FROM quay.io/bgruening/galaxy-web
 
 MAINTAINER William Barshop, wbarshop@ucla.edu
 
