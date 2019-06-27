@@ -68,13 +68,22 @@ RUN gpg --keyserver hkp://keyserver.ubuntu.com --recv-keys 409B6B1796C275462A170
 #RUN python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /usr/local/rvm/rubies/ruby-2.5.1/bin/ /OpenMS-build/bin/ /home/galaxy/crux/bin/
 ENV PATH="/etc/supervisor/conf.d/galaxy.conf:/usr/local/rvm/rubies/ruby-2.5.1/bin/:/OpenMS-build/bin/:/home/galaxy/crux/bin/:${PATH}"
 
-#installation of OpenMS 2.2.0.
-RUN apt-get install build-essential autoconf patch libtool automake qt4-default libqtwebkit-dev libeigen3-dev libxerces-c-dev libboost-all-dev libsvn-dev libbz2-dev -y --force-yes
+#installation of OpenMS 2.4.0.
+RUN apt-get install build-essential autoconf patch libtool automake qtbase5-dev libqt5svg5-dev libeigen3-dev libxerces-c-dev libboost-all-dev libsvn-dev libbz2-dev -y --force-yes
 RUN mkdir /galaxy-central/ && mkdir /galaxy-central/tools/
-RUN curl -L https://github.com/OpenMS/OpenMS/releases/download/Release2.2.0/OpenMS-2.2.0-src.zip > OpenMS-2.2.0-src.zip && unzip OpenMS-2.2.0-src.zip && rm OpenMS-2.2.0-src.zip && mv archive/* . && rm -rf archive/ && cd OpenMS-2.2.0/ && mkdir contrib-build && cd contrib-build && \
+#RUN curl -L https://github.com/OpenMS/OpenMS/releases/download/Release2.2.0/OpenMS-2.2.0-src.zip > OpenMS-2.2.0-src.zip && unzip OpenMS-2.2.0-src.zip && rm OpenMS-2.2.0-src.zip && mv archive/* . && rm -rf archive/ && cd OpenMS-2.2.0/ && mkdir contrib-build && cd contrib-build && \
+#RUN curl -L https://github.com/OpenMS/OpenMS/archive/Release2.4.0.zip > OpenMS-2.4.0-src.zip && unzip OpenMS-2.4.0-src.zip && rm OpenMS-2.4.0-src.zip
+
+WORKDIR /galaxy-central/
+RUN curl -L https://github.com/OpenMS/OpenMS/releases/download/Release2.4.0/OpenMS-2.4.0-src.tar.gz > OpenMS-2.4.0-src.tar.gz && tar xzvf OpenMS-2.4.0-src.tar.gz && rm OpenMS-2.4.0-src.tar.gz
+#&& mv OpenMS-Release2.4.0/* . && rm -rf OpenMS-Release2.4.0/ && 
+RUN ls && cd OpenMS-2.4.0/ && mkdir contrib-build && cd contrib-build && \
     cmake -DBUILD_TYPE=ALL -DNUMBER_OF_JOBS=8 ../contrib && \
-    cd / && mkdir OpenMS-build && cd OpenMS-build && cmake -DCMAKE_PREFIX_PATH="/galaxy-central/OpenMS-2.2.0/contrib-build;/usr;/usr/local" -DBOOST_USE_STATIC=OFF -DOPENMS_CONTRIB_LIBS=/galaxy-central/OpenMS-2.2.0/contrib-build /galaxy-central/OpenMS-2.2.0/ && \
-    make && echo "export LD_LIBRARY_PATH='/OpenMS-build/lib:$LD_LIBRARY_PATH'" >> $HOME/.bashrc && mv /OpenMS-build/bin/* /galaxy_venv/bin/
+    cd / && mkdir OpenMS-build && cd OpenMS-build && cmake -DCMAKE_PREFIX_PATH="/galaxy-central/OpenMS-2.4.0/contrib-build;/usr;/usr/local" -DBOOST_USE_STATIC=OFF -DOPENMS_CONTRIB_LIBS=/galaxy-central/OpenMS-2.4.0/contrib-build /galaxy-central/OpenMS-2.4.0/ ; \
+    make && echo "export LD_LIBRARY_PATH='/OpenMS-build/lib:$LD_LIBRARY_PATH'" >> $HOME/.bashrc
+#    cat /OpenMS-2.4.0/contrib-build/CMakeFiles/CMakeOutput.log && \
+
+#&& mv /OpenMS-build/bin/* /galaxy_venv/bin/
 
 
 #RUN curl -L https://github.com/OpenMS/OpenMS/releases/download/Release2.2.0/OpenMS-2.2.0-src.zip > OpenMS-2.2.0-src.zip && unzip OpenMS-2.2.0-src.zip && rm OpenMS-2.2.0-src.zip && mv archive/* . && rm -rf archive/ && cd OpenMS-2.2.0/ && mkdir contrib-build && cd contrib-build && \
