@@ -1,14 +1,17 @@
-FROM quay.io/bgruening/galaxy-web
+FROM quay.io/bgruening/galaxy-htcondor-base:19.01
 
 MAINTAINER William Barshop, wbarshop@ucla.edu
 
 #Updating packages and installing R...
-RUN apt-get update --yes --force-yes && apt-get --yes --force-yes install libpango-1.0-0 libbz2-dev;apt-get -f install -y;apt-get --yes --force-yes remove r-base-core r-base
+RUN apt-get update --yes --force-yes && apt-get --yes --force-yes install gnupg2 libpango-1.0-0 libbz2-dev;apt-get -f install -y;apt-get --yes --force-yes remove r-base-core r-base
 
-
+#gpg --keyserver subkeys.pgp.net --recv-key 381BA480 && \
 RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF && \
-    echo "deb http://download.mono-project.com/repo/debian wheezy main" | sudo tee /etc/apt/sources.list.d/mono-xamarin.list && \
-    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9;sh -c 'echo "deb http://cran.rstudio.com/bin/linux/ubuntu trusty/" >> /etc/apt/sources.list'
+    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9 && \
+    echo "deb http://download.mono-project.com/repo/debian wheezy main" | tee /etc/apt/sources.list.d/mono-xamarin.list && \
+    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 76F1A20FF987672F && \
+    sh -c 'echo "deb http://cran.rstudio.com/bin/linux/ubuntu trusty/" >> /etc/apt/sources.list'
+    #gpg --keyserver subkeys.pgp.net --recv-key 381BA480 && \
 
 RUN apt-get update --yes --force-yes && \
     apt-get install -y --force-yes \
@@ -18,7 +21,7 @@ RUN apt-get update --yes --force-yes && \
     netcdf-bin \
     nco \
     libnetcdf-dev \
-    libnetcdfc7 \
+    libnetcdf13 \
     udunits-bin \
     libudunits2-dev \
     libcairo2-dev \
@@ -32,45 +35,52 @@ RUN apt-get update --yes --force-yes && \
     patch \
     libtool \
     automake \
-    python-software-properties \
-    software-properties-common
+    software-properties-common \
+    curl
 
 #Let's get cmake
-ENV CMAKE_ROOT=/home/galaxy/cmake/cmake-3.13.4-Linux-x86_64/
-RUN cd /home/galaxy/ && mkdir cmake/ && cd cmake && \
+ENV CMAKE_ROOT=/cmake/cmake-3.13.4-Linux-x86_64/
+RUN cd / && mkdir cmake/ && cd cmake && \
     wget https://github.com/Kitware/CMake/releases/download/v3.13.4/cmake-3.13.4-Linux-x86_64.tar.gz -O cmake.tar.gz && \
     tar xzvf cmake.tar.gz && \
     rm cmake.tar.gz && cd cmake-3.13.4-Linux-x86_64 && cp -r share/* /usr/share/ && cp bin/* /usr/bin/
 
 #Installing wine....
-RUN mv /etc/apt/sources.list.d/htcondor.list temporary_file && \
-dpkg --add-architecture i386 && \
+#RUN mv /etc/apt/sources.list.d/htcondor.list temporary_file && \
+RUN dpkg --add-architecture i386 && \
 wget https://dl.winehq.org/wine-builds/Release.key && \
-sudo apt-key add Release.key && \
-sudo apt-add-repository https://dl.winehq.org/wine-builds/ubuntu/ && \
+apt-key add Release.key && \
+apt-add-repository https://dl.winehq.org/wine-builds/ubuntu/ && \
 apt-get update && \
-sudo apt-get install --install-recommends winehq-stable -y --force-yes
+apt-get install --install-recommends winehq-stable -y --force-yes
 
 
 #Let's handle rvm and protk installation
 RUN gpg --keyserver hkp://keyserver.ubuntu.com --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB && \
-    curl -sSL https://get.rvm.io | grep -v __rvm_print_headline | sudo bash -s stable --ruby=2.5.1 && \
+    curl -sSL https://get.rvm.io | grep -v __rvm_print_headline | bash -s stable --ruby=2.5.1 && \
     /bin/bash -c "source /usr/local/rvm/scripts/rvm && gem install protk -v 1.4.2" && \
-    sudo usermod -a -G rvm galaxy
+    usermod -a -G rvm $(whoami)
 
 
 #scripts to handle galaxy supervisor paths and env values
-ADD add_to_galaxy_path.py /galaxy-central/add_to_galaxy_path.py
-ADD add_to_galaxy_env.py /galaxy-central/add_to_galaxy_env.py
-RUN python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /usr/local/rvm/rubies/ruby-2.5.1/bin/ /OpenMS-build/bin/ /home/galaxy/crux/bin/
-
+#ADD add_to_galaxy_path.py /galaxy-central/add_to_galaxy_path.py
+#ADD add_to_galaxy_env.py /galaxy-central/add_to_galaxy_env.py
+#RUN python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /usr/local/rvm/rubies/ruby-2.5.1/bin/ /OpenMS-build/bin/ /home/galaxy/crux/bin/
+ENV PATH="/etc/supervisor/conf.d/galaxy.conf:/usr/local/rvm/rubies/ruby-2.5.1/bin/:/OpenMS-build/bin/:/home/galaxy/crux/bin/:${PATH}"
 
 #installation of OpenMS 2.2.0.
 RUN apt-get install build-essential autoconf patch libtool automake qt4-default libqtwebkit-dev libeigen3-dev libxerces-c-dev libboost-all-dev libsvn-dev libbz2-dev -y --force-yes
+RUN mkdir /galaxy-central/ && mkdir /galaxy-central/tools/
 RUN curl -L https://github.com/OpenMS/OpenMS/releases/download/Release2.2.0/OpenMS-2.2.0-src.zip > OpenMS-2.2.0-src.zip && unzip OpenMS-2.2.0-src.zip && rm OpenMS-2.2.0-src.zip && mv archive/* . && rm -rf archive/ && cd OpenMS-2.2.0/ && mkdir contrib-build && cd contrib-build && \
     cmake -DBUILD_TYPE=ALL -DNUMBER_OF_JOBS=8 ../contrib && \
     cd / && mkdir OpenMS-build && cd OpenMS-build && cmake -DCMAKE_PREFIX_PATH="/galaxy-central/OpenMS-2.2.0/contrib-build;/usr;/usr/local" -DBOOST_USE_STATIC=OFF -DOPENMS_CONTRIB_LIBS=/galaxy-central/OpenMS-2.2.0/contrib-build /galaxy-central/OpenMS-2.2.0/ && \
     make && echo "export LD_LIBRARY_PATH='/OpenMS-build/lib:$LD_LIBRARY_PATH'" >> $HOME/.bashrc && mv /OpenMS-build/bin/* /galaxy_venv/bin/
+
+
+#RUN curl -L https://github.com/OpenMS/OpenMS/releases/download/Release2.2.0/OpenMS-2.2.0-src.zip > OpenMS-2.2.0-src.zip && unzip OpenMS-2.2.0-src.zip && rm OpenMS-2.2.0-src.zip && mv archive/* . && rm -rf archive/ && cd OpenMS-2.2.0/ && mkdir contrib-build && cd contrib-build && \
+#    cmake -DBUILD_TYPE=ALL -DNUMBER_OF_JOBS=8 ../contrib && \
+#    cd / && mkdir OpenMS-build && cd OpenMS-build && cmake -DCMAKE_PREFIX_PATH="/galaxy-central/OpenMS-2.2.0/contrib-build;/usr;/usr/local" -DBOOST_USE_STATIC=OFF -DOPENMS_CONTRIB_LIBS=/galaxy-central/OpenMS-2.2.0/contrib-build /galaxy-central/OpenMS-2.2.0/ && \
+#    make && echo "export LD_LIBRARY_PATH='/OpenMS-build/lib:$LD_LIBRARY_PATH'" >> $HOME/.bashrc && mv /OpenMS-build/bin/* /galaxy_venv/bin/
 
     
 #Installing R packages and MSstats
@@ -88,7 +98,10 @@ RUN cd /bin/ && tar xvfj pwiz.tar.bz2 && rm pwiz.tar.bz2
 #Installing crux toolkit...
 RUN git config --global user.email "docker@localhost" ; git config --global user.name "docker" && \
     git clone https://github.com/crux-toolkit/crux-toolkit.git crux-toolkit && cd crux-toolkit && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:PATH=~/crux/ && make && make install && \
-    python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /home/galaxy/crux/bin/ && cp /home/galaxy/crux/bin/crux /galaxy_venv/bin/crux
+    cp /home/galaxy/crux/bin/crux /galaxy_venv/bin/crux
+#    python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /home/galaxy/crux/bin/ && 
+
+ENV PATH="/etc/supervisor/conf.d/galaxy.conf:/home/galaxy/crux/bin/:${PATH}"
 
 #SET UP BLIBBUILD
 RUN mkdir /galaxy-central/tools/wohl-proteomics/ && \
