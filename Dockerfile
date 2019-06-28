@@ -80,7 +80,7 @@ RUN gpg --keyserver hkp://keyserver.ubuntu.com --recv-keys 409B6B1796C275462A170
 #ADD add_to_galaxy_path.py /galaxy-central/add_to_galaxy_path.py
 #ADD add_to_galaxy_env.py /galaxy-central/add_to_galaxy_env.py
 #RUN python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /usr/local/rvm/rubies/ruby-2.5.1/bin/ /OpenMS-build/bin/ /home/galaxy/crux/bin/
-ENV PATH="/etc/supervisor/conf.d/galaxy.conf:/usr/local/rvm/rubies/ruby-2.5.1/bin/:/OpenMS-build/bin/:/home/galaxy/crux/bin/:${PATH}"
+ENV PATH="/usr/local/rvm/rubies/ruby-2.5.1/bin/:/OpenMS-build/bin/:${PATH}"
 
 #installation of OpenMS 2.4.0.
 RUN apt-get install build-essential autoconf patch libtool automake qtbase5-dev libqt5svg5-dev libeigen3-dev libxerces-c-dev libboost-all-dev libsvn-dev libbz2-dev -y --force-yes
@@ -107,6 +107,7 @@ RUN ls && cd OpenMS-2.4.0/ && mkdir contrib-build && cd contrib-build && \
 
     
 #Installing proteowizard binaries...
+RUN apt-get install subversion --yes
 COPY pwiz-bin-linux-x86_64-gcc48-release-3_0_10738.tar.bz2 /bin/pwiz.tar.bz2
 RUN cd /bin/ && tar xvfj pwiz.tar.bz2 && rm pwiz.tar.bz2
 
@@ -114,17 +115,21 @@ RUN cd /bin/ && tar xvfj pwiz.tar.bz2 && rm pwiz.tar.bz2
 #Installing crux toolkit...
 RUN mkdir /crux/ && \
     cd /crux/ && \
-    git config --global user.email "docker@localhost" && \
-    git config --global user.name "docker" && \
-    git clone https://github.com/crux-toolkit/crux-toolkit.git crux-toolkit && \
-    cd crux-toolkit && \
-    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:PATH=/crux/ && \
-    make && \
-    make install && \
-    cp /crux/bin/crux /galaxy_venv/bin/crux
+    curl -s https://noble.gs.washington.edu/crux-downloads/daily/latest-build.txt >build.txt && BUILD=$(cat build.txt) && \
+    curl https://noble.gs.washington.edu/crux-downloads/daily/crux-3.2.${BUILD}.Linux.x86_64.zip > crux-3.2.zip && \
+    unzip crux-3.2.zip && rm crux-3.2.zip && mkdir bin/ && \
+    mv crux-3.2.Linux.x86_64/bin/* bin/ && rm -rf crux-3.2.Linux.x86_64/ && \
+    cp /crux/bin/crux /bin/crux
+    #git config --global user.email "docker@localhost" && \
+    #git config --global user.name "docker" && \
+    #git clone https://github.com/crux-toolkit/crux-toolkit.git crux-toolkit && \
+    #cd crux-toolkit && \
+    #cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:PATH=/crux/ && \
+    #make && \
+    #make install && \
 #    python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /home/galaxy/crux/bin/ && 
 
-ENV PATH="/etc/supervisor/conf.d/galaxy.conf:/crux/bin/:${PATH}"
+ENV PATH="/crux/bin/:${PATH}"
 
 #SET UP BLIBBUILD
 RUN mkdir /galaxy-central/tools/wohl-proteomics/ && \
