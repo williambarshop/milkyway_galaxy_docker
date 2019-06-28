@@ -3,14 +3,16 @@ FROM quay.io/bgruening/galaxy-htcondor-base:19.01
 MAINTAINER William Barshop, wbarshop@ucla.edu
 
 #Updating packages and installing R...
-RUN apt-get update --yes --force-yes && apt-get --yes --force-yes install gnupg2 libpango-1.0-0 libbz2-dev;apt-get -f install -y;apt-get --yes --force-yes remove r-base-core r-base
+RUN apt-get update --yes --force-yes && \
+    apt-get --yes --force-yes install gnupg2 libpango-1.0-0 libbz2-dev && \
+    apt-get -f install -y
 
 #gpg --keyserver subkeys.pgp.net --recv-key 381BA480 && \
 RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF && \
     apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9 && \
     echo "deb http://download.mono-project.com/repo/debian wheezy main" | tee /etc/apt/sources.list.d/mono-xamarin.list && \
     apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 76F1A20FF987672F && \
-    sh -c 'echo "deb http://cran.rstudio.com/bin/linux/ubuntu trusty/" >> /etc/apt/sources.list'
+    sh -c 'echo "deb http://cran.rstudio.com/bin/linux/ubuntu bionic-cran35/" >> /etc/apt/sources.list'
     #gpg --keyserver subkeys.pgp.net --recv-key 381BA480 && \
 
 RUN apt-get update --yes --force-yes && \
@@ -38,6 +40,18 @@ RUN apt-get update --yes --force-yes && \
     software-properties-common \
     curl
 
+#Installing R packages and MSstats
+RUN touch /etc/bash_completion.d/R;cp /etc/bash_completion.d/R /usr/share/bash-completion/completions/R && apt-get update && apt-get install -f && \
+    apt-get install r-cran-mass r-cran-class r-cran-nnet r-cran-boot r-base-core r-base r-recommended --yes
+#    R -e "source('https://bioconductor.org/biocLite.R');biocLite(c('limma','marray','preprocessCore','MSnbase'),ask=FALSE)" && \
+#    R -e "install.packages('MSstats_3.9.2.tar.gz',type='source', repos=NULL)" && \
+#    rm MSstats_3.9.2.tar.gz
+#RUN wget "http://msstats.org/wp-content/uploads/2017/09/MSstats_3.9.2.tar.gz" && \
+
+RUN R -e "install.packages('BiocManager');BiocManager::install(c('limma','marray','preprocessCore','MSnbase','MSstats'),ask=FALSE)" && \
+    R -e "install.packages(c('gplots','lme4','ggplot2','ggrepel','reshape','reshape2','data.table','rjson','Rcpp','survival','minpack.lm'),repos='https://cran.rstudio.com/',dependencies=TRUE)"
+
+    
 #Let's get cmake
 ENV CMAKE_ROOT=/cmake/cmake-3.13.4-Linux-x86_64/
 RUN cd / && mkdir cmake/ && cd cmake && \
@@ -92,25 +106,25 @@ RUN ls && cd OpenMS-2.4.0/ && mkdir contrib-build && cd contrib-build && \
 #    make && echo "export LD_LIBRARY_PATH='/OpenMS-build/lib:$LD_LIBRARY_PATH'" >> $HOME/.bashrc && mv /OpenMS-build/bin/* /galaxy_venv/bin/
 
     
-#Installing R packages and MSstats
-RUN touch /etc/bash_completion.d/R;cp /etc/bash_completion.d/R /usr/share/bash-completion/completions/R;apt-get update; apt-get install -f;apt-get -o Dpkg::Options::=--force-confnew --yes --force-yes install r-base-core r-base && \
-    R -e "install.packages(c('gplots','lme4','ggplot2','ggrepel','reshape','reshape2','data.table','rjson','Rcpp','survival','minpack.lm'),repos='https://cran.rstudio.com/',dependencies=TRUE)" && \
-    R -e "source('https://bioconductor.org/biocLite.R');biocLite(c('limma','marray','preprocessCore','MSnbase'),ask=FALSE)" && \
-    wget "http://msstats.org/wp-content/uploads/2017/09/MSstats_3.9.2.tar.gz";R -e "install.packages('MSstats_3.9.2.tar.gz',type='source', repos=NULL)"; rm MSstats_3.9.2.tar.gz
-
-    
 #Installing proteowizard binaries...
 COPY pwiz-bin-linux-x86_64-gcc48-release-3_0_10738.tar.bz2 /bin/pwiz.tar.bz2
 RUN cd /bin/ && tar xvfj pwiz.tar.bz2 && rm pwiz.tar.bz2
 
 
 #Installing crux toolkit...
-RUN git config --global user.email "docker@localhost" ; git config --global user.name "docker" && \
-    git clone https://github.com/crux-toolkit/crux-toolkit.git crux-toolkit && cd crux-toolkit && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:PATH=~/crux/ && make && make install && \
-    cp /home/galaxy/crux/bin/crux /galaxy_venv/bin/crux
+RUN mkdir /crux/ && \
+    cd /crux/ && \
+    git config --global user.email "docker@localhost" && \
+    git config --global user.name "docker" && \
+    git clone https://github.com/crux-toolkit/crux-toolkit.git crux-toolkit && \
+    cd crux-toolkit && \
+    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:PATH=/crux/ && \
+    make && \
+    make install && \
+    cp /crux/bin/crux /galaxy_venv/bin/crux
 #    python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /home/galaxy/crux/bin/ && 
 
-ENV PATH="/etc/supervisor/conf.d/galaxy.conf:/home/galaxy/crux/bin/:${PATH}"
+ENV PATH="/etc/supervisor/conf.d/galaxy.conf:/crux/bin/:${PATH}"
 
 #SET UP BLIBBUILD
 RUN mkdir /galaxy-central/tools/wohl-proteomics/ && \
