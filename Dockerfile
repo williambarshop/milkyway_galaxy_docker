@@ -2,14 +2,12 @@ FROM bgruening/galaxy-stable:latest
 
 MAINTAINER William Barshop, wbarshop@ucla.edu
 
-#Installing Milkyway tools/configurations...
-#The wohl tool conf will be appended with some extras at the end of the docker image build.
-RUN echo "The milkyway toolset was cloned auotmatically after a triggered pull from commit_rev-CI_job_ID on DATE-REPLACE"  && git clone https://github.com/wohllab/milkyway_proteomics.git --branch master && \
-    mv milkyway_proteomics/galaxy_milkyway_files/tool-data/msgfplus_mods.loc $GALAXY_ROOT/tool-data/msgfplus_mods.loc;mv milkyway_proteomics/galaxy_milkyway_files/tool-data/silac_mods.loc $GALAXY_ROOT/tool-data/silac_mods.loc && \
-    apt-get update && \
-    apt-get install rsync -y && \
-    rsync -avzh milkyway_proteomics/galaxy_milkyway_files/tools/wohl-proteomics/ $GALAXY_ROOT/tools/wohl-proteomics/ && \
-    mv milkyway_proteomics/galaxy_milkyway_files/config/wohl_tool_conf.xml /home/galaxy/wohl_tool_conf.xml
+#and installing python packages...
+
+#INSTALL SOME PYTHON PACKAGES INTO VENV
+RUN . "$GALAXY_VIRTUAL_ENV/bin/activate" && pip install cython && pip install https://pypi.python.org/packages/de/db/7df2929ee9fad94aa9e57071bbca246a42069c0307305e00ce3f2c5e0c1d/pyopenms-2.1.0-cp27-none-manylinux1_x86_64.whl#md5=3c886f9bb4a2569c0d3c8fe29fbff5e1 && pip install numpy==1.13.0 uniprot_tools h5py==2.7.0 ephemeris futures tqdm joblib multiprocessing pandas argparse pyteomics==3.2 natsort tqdm biopython lxml plotly Orange-Bioinformatics -U && \
+    pip install pymzml==0.7.8 
+RUN ls /galaxy_venv/lib/python2.7/site-packages/ && curl -L http://ontologies.berkeleybop.org/ms.obo > /galaxy_venv/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.14.obo && cp /galaxy_venv/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.14.obo /galaxy_venv/lib/python2.7/site-packages/pymzml/obo/psi-ms-23:06:2017.0.0.obo && cp /galaxy_venv/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.14.obo /galaxy_venv/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.1.1.obo
 
 
 #Now let's move all the tool data from our local machine into the docker image.
@@ -19,12 +17,6 @@ RUN echo "The milkyway toolset was cloned auotmatically after a triggered pull f
 
 
 ## INSTALL WORKFLOWS AND TOOLBOX TOOLS INTO GALAXY ##
-#and installing python packages...
-
-#INSTALL SOME PYTHON PACKAGES INTO VENV
-RUN . "$GALAXY_VIRTUAL_ENV/bin/activate" && pip install cython && pip install https://pypi.python.org/packages/de/db/7df2929ee9fad94aa9e57071bbca246a42069c0307305e00ce3f2c5e0c1d/pyopenms-2.1.0-cp27-none-manylinux1_x86_64.whl#md5=3c886f9bb4a2569c0d3c8fe29fbff5e1 && pip install numpy==1.13.0 uniprot_tools h5py==2.7.0 ephemeris futures tqdm joblib multiprocessing pandas argparse pyteomics==3.2 natsort tqdm biopython lxml plotly Orange-Bioinformatics -U && \
-    pip install pymzml==0.7.8 
-RUN ls /galaxy_venv/lib/python2.7/site-packages/ && curl -L http://ontologies.berkeleybop.org/ms.obo > /galaxy_venv/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.14.obo && cp /galaxy_venv/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.14.obo /galaxy_venv/lib/python2.7/site-packages/pymzml/obo/psi-ms-23:06:2017.0.0.obo && cp /galaxy_venv/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.14.obo /galaxy_venv/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.1.1.obo
 
     
 # PATCHES AND FIXES BASED ON HARD REVISIONED PACKAGES
@@ -36,15 +28,21 @@ RUN sed -i "s#        pattern = r\"(#        directory = directory.replace('\\\\
 #Modify galaxy.ini to always cleanup...
 RUN sed -i 's/#cleanup_job = always/cleanup_job = always/' /etc/galaxy/galaxy.yml
 
-#Gotta give this an absolute path nowadays...
-RUN sed -i "s#ruby#/usr/local/rvm/rubies/ruby-2.5.1/bin/ruby#" /usr/local/rvm/gems/ruby-2.5.1/gems/protk-1.4.2/lib/protk/galaxy_stager.rb
-
 #Let's install a few galaxy tools....
 ADD proteomics_toolshed.yml $GALAXY_ROOT/proteomics_toolshed.yml
 RUN cp /galaxy-central/config/dependency_resolvers_conf.xml.sample /galaxy-central/config/dependency_resolvers_conf.xml && \
     startup_lite && \
     sleep 25 && \
     install-tools $GALAXY_ROOT/proteomics_toolshed.yml
+
+#Installing Milkyway tools/configurations...
+#The wohl tool conf will be appended with some extras at the end of the docker image build.
+RUN echo "The milkyway toolset was cloned auotmatically after a triggered pull from commit_rev-CI_job_ID on DATE-REPLACE"  && git clone https://github.com/wohllab/milkyway_proteomics.git --branch master && \
+    mv milkyway_proteomics/galaxy_milkyway_files/tool-data/msgfplus_mods.loc $GALAXY_ROOT/tool-data/msgfplus_mods.loc;mv milkyway_proteomics/galaxy_milkyway_files/tool-data/silac_mods.loc $GALAXY_ROOT/tool-data/silac_mods.loc && \
+    apt-get update && \
+    apt-get install rsync -y && \                                                                                                                                                                                                                rsync -avzh milkyway_proteomics/galaxy_milkyway_files/tools/wohl-proteomics/ $GALAXY_ROOT/tools/wohl-proteomics/ && \
+    mv milkyway_proteomics/galaxy_milkyway_files/config/wohl_tool_conf.xml /home/galaxy/wohl_tool_conf.xml            
+
 
 COPY replace_workflow_id.py /galaxy-central/replace_workflow_id.py
 COPY patch_msconvert.py /galaxy-central/patch_msconvert.py
