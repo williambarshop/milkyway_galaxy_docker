@@ -7,6 +7,18 @@ RUN apt-get update --yes --force-yes && \
     apt-get --yes --force-yes install gnupg2 libpango-1.0-0 libbz2-dev && \
     apt-get -f install -y
 
+RUN apt-get install python-numpy libqt4-opengl-dev libqt4-dev cmake qt4-qmake python-sip-dev python-qt4 python-qt4-dev python-qwt5-qt4 python-sip graphviz python-networkx python-qt4-gl build-essential python-pip python-scipy python-pyparsing ipython python-matplotlib -y
+RUN pip install Orange-Bioinformatics
+
+#ENV PATH="/root/miniconda2/bin/:${PATH}"
+#SHELL ["/bin/bash", "-c"]
+#RUN wget https://repo.anaconda.com/miniconda/Miniconda2-latest-Linux-x86_64.sh && sh Miniconda2-latest-Linux-x86_64.sh -b && \
+#    conda create -n py2 python=2.7 anaconda
+#RUN echo "source activate py2" > ~/.bashrc
+#RUN python --version
+#RUN apt-get install gcc g++ --yes && pip install Orange-Bioinformatics 
+#conda install Orange-Bioinformatics
+
 #gpg --keyserver subkeys.pgp.net --recv-key 381BA480 && \
 RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF && \
     apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9 && \
@@ -132,9 +144,11 @@ RUN mkdir /crux/ && \
 ENV PATH="/crux/bin/:${PATH}"
 
 #SET UP BLIBBUILD
+#    svn checkout -r11856 https://svn.code.sf.net/p/proteowizard/code/trunk/pwiz proteowizard-code && \
+ENV LC_CTYPE=en_US.UTF-8
 RUN mkdir /galaxy-central/tools/wohl-proteomics/ && \
     mkdir /galaxy-central/tools/wohl-proteomics/ssl_converter/ && \
-    svn checkout -r11856 https://svn.code.sf.net/p/proteowizard/code/trunk/pwiz proteowizard-code && \
+    svn checkout https://svn.code.sf.net/p/proteowizard/code/trunk/pwiz proteowizard-code && \
     cd proteowizard-code/ && \
     sh quickbuild.sh -j8 optimization=space address-model=64 pwiz_tools/BiblioSpec && \
     mkdir /galaxy-central/tools/wohl-proteomics/ssl_converter/blibbuild && \
@@ -146,12 +160,11 @@ RUN mkdir /galaxy-central/tools/wohl-proteomics/ && \
 
 #Installing Milkyway tools/configurations...
 #The wohl tool conf will be appended with some extras at the end of the docker image build.
+#    mv milkyway_proteomics/galaxy_milkyway_files/tool-data/msgfplus_mods.loc $GALAXY_ROOT/tool-data/msgfplus_mods.loc;mv milkyway_proteomics/galaxy_milkyway_files/tool-data/silac_mods.loc $GALAXY_ROOT/tool-data/silac_mods.loc && \
 RUN echo "The milkyway toolset was cloned auotmatically after a triggered pull from commit_rev-CI_job_ID on DATE-REPLACE"  && git clone https://github.com/wohllab/milkyway_proteomics.git --branch master && \
-    mv milkyway_proteomics/galaxy_milkyway_files/tool-data/msgfplus_mods.loc $GALAXY_ROOT/tool-data/msgfplus_mods.loc;mv milkyway_proteomics/galaxy_milkyway_files/tool-data/silac_mods.loc $GALAXY_ROOT/tool-data/silac_mods.loc && \
     apt-get update && \
     apt-get install rsync -y && \
-    rsync -avzh milkyway_proteomics/galaxy_milkyway_files/tools/wohl-proteomics/ $GALAXY_ROOT/tools/wohl-proteomics/ && \
-    mv milkyway_proteomics/galaxy_milkyway_files/config/wohl_tool_conf.xml /home/galaxy/wohl_tool_conf.xml
+    rsync -avzh milkyway_proteomics/galaxy_milkyway_files/tools/wohl-proteomics/ /galaxy-central/tools/wohl-proteomics/
 
 
 #Now let's move all the tool data from our local machine into the docker image.
@@ -164,7 +177,11 @@ RUN echo "The milkyway toolset was cloned auotmatically after a triggered pull f
 #and installing python packages...
 
 #INSTALL SOME PYTHON PACKAGES INTO VENV
-RUN . "$GALAXY_VIRTUAL_ENV/bin/activate" && pip install cython && pip install https://pypi.python.org/packages/de/db/7df2929ee9fad94aa9e57071bbca246a42069c0307305e00ce3f2c5e0c1d/pyopenms-2.1.0-cp27-none-manylinux1_x86_64.whl#md5=3c886f9bb4a2569c0d3c8fe29fbff5e1 && pip install numpy==1.13.0 uniprot_tools h5py==2.7.0 ephemeris futures tqdm joblib multiprocessing pandas argparse pyteomics==3.2 natsort tqdm biopython lxml plotly Orange-Bioinformatics -U && \
+RUN apt-get install gcc g++ python-pip --yes && \
+    pip install Orange-Bioinformatics -U && \
+    pip install cython && \
+    pip install https://pypi.python.org/packages/de/db/7df2929ee9fad94aa9e57071bbca246a42069c0307305e00ce3f2c5e0c1d/pyopenms-2.1.0-cp27-none-manylinux1_x86_64.whl#md5=3c886f9bb4a2569c0d3c8fe29fbff5e1 && \
+    pip install numpy==1.13.0 uniprot_tools h5py==2.7.0 ephemeris futures tqdm joblib multiprocessing pandas argparse pyteomics==3.2 natsort tqdm biopython lxml plotly -U && \
     pip install pymzml==0.7.8 
 RUN ls /galaxy_venv/lib/python2.7/site-packages/ && curl -L http://ontologies.berkeleybop.org/ms.obo > /galaxy_venv/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.14.obo && cp /galaxy_venv/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.14.obo /galaxy_venv/lib/python2.7/site-packages/pymzml/obo/psi-ms-23:06:2017.0.0.obo && cp /galaxy_venv/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.14.obo /galaxy_venv/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.1.1.obo
 
