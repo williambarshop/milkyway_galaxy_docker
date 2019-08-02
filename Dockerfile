@@ -1,4 +1,4 @@
-FROM bgruening/galaxy-stable:latest
+FROM bgruening/galaxy-stable:18.05
 
 MAINTAINER William Barshop, wbarshop@ucla.edu
 
@@ -8,7 +8,9 @@ RUN apt-get update --yes --force-yes && apt-get --yes --force-yes install libpan
 
 RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF && \
     echo "deb http://download.mono-project.com/repo/debian wheezy main" | sudo tee /etc/apt/sources.list.d/mono-xamarin.list && \
-    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9;sh -c 'echo "deb http://cran.rstudio.com/bin/linux/ubuntu trusty/" >> /etc/apt/sources.list'
+    gpg --keyserver keyserver.ubuntu.com --recv-key E084DAB9 && gpg -a --export E084DAB9 | sudo apt-key add - && \
+    sh -c 'echo "deb http://cloud.r-project.org/bin/linux/ubuntu trusty-cran35/" >> /etc/apt/sources.list'
+    #apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9;
 
 RUN apt-get update --yes --force-yes && \
     apt-get install -y --force-yes \
@@ -75,9 +77,11 @@ RUN curl -L https://github.com/OpenMS/OpenMS/releases/download/Release2.2.0/Open
     
 #Installing R packages and MSstats
 RUN touch /etc/bash_completion.d/R;cp /etc/bash_completion.d/R /usr/share/bash-completion/completions/R;apt-get update; apt-get install -f;apt-get -o Dpkg::Options::=--force-confnew --yes --force-yes install r-base-core r-base && \
-    R -e "install.packages(c('gplots','lme4','ggplot2','ggrepel','reshape','reshape2','data.table','rjson','Rcpp','survival','minpack.lm'),repos='https://cran.rstudio.com/',dependencies=TRUE)" && \
-    R -e "source('https://bioconductor.org/biocLite.R');biocLite(c('limma','marray','preprocessCore','MSnbase'),ask=FALSE)" && \
-    wget "http://msstats.org/wp-content/uploads/2017/09/MSstats_3.9.2.tar.gz";R -e "install.packages('MSstats_3.9.2.tar.gz',type='source', repos=NULL)"; rm MSstats_3.9.2.tar.gz
+    R -e "install.packages(c('gplots','lme4','ggplot2','ggrepel','reshape','reshape2','data.table','rjson','Rcpp','survival','minpack.lm','BiocManager'),repos='https://cran.rstudio.com/',dependencies=TRUE,ask=FALSE)" && \
+    R -e "BiocManager::install(c('limma','marray','preprocessCore','MSnbase','devtools'),ask=FALSE)" && \
+    R -e "devtools::github_install(\"wohllab/MSstats\")"
+#&& \
+#    wget "http://msstats.org/wp-content/uploads/2017/09/MSstats_3.9.2.tar.gz";R -e "install.packages('MSstats_3.9.2.tar.gz',type='source', repos=NULL)"; rm MSstats_3.9.2.tar.gz
 
     
 #Installing proteowizard binaries...
@@ -152,15 +156,15 @@ ADD MSPLIT-DIAv07192015.jar /galaxy-central/tools/wohl-proteomics/msplit-dia/
 #And while we're at it, we'll get Specter
 #And we'll handle the conda environment, and manually pull the obo file as per the Specter instructions.
 #Also installing 3 packages for Specter into R at the end
-RUN cd /galaxy-central/tools/wohl-proteomics/specter/ && \
-    git clone https://github.com/rpeckner-broad/Specter.git && \
-    cd Specter && \
-    conda env create -f SpecterEnv.yml && \
-    conda activate SpecterEnv && \
-    pip install cvxopt && \
-    wget http://data.bioontology.org/ontologies/MS/submissions/116/download?apikey=8b5b7825-538d-40e0-9e9e-5ab9274a9aeb && \
-    mv download?apikey=8b5b7825-538d-40e0-9e9e-5ab9274a9aeb /tool_deps/_conda/envs/SpecterEnv/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.1.obo && \
-    R -e "install.packages(c('moments','pracma','kza'),repos='https://cran.rstudio.com/',dependencies=TRUE)"
+#RUN cd /galaxy-central/tools/wohl-proteomics/specter/ && \
+#    git clone https://github.com/rpeckner-broad/Specter.git && \
+#    cd Specter && \
+#    conda env create -f SpecterEnv.yml && \
+#    conda activate SpecterEnv && \
+#    pip install cvxopt && \
+#    wget http://data.bioontology.org/ontologies/MS/submissions/116/download?apikey=8b5b7825-538d-40e0-9e9e-5ab9274a9aeb && \
+#    mv download?apikey=8b5b7825-538d-40e0-9e9e-5ab9274a9aeb /tool_deps/_conda/envs/SpecterEnv/lib/python2.7/site-packages/pymzml/obo/psi-ms-4.0.1.obo && \
+#    R -e "install.packages(c('moments','pracma','kza'),repos='https://cran.rstudio.com/',dependencies=TRUE)"
 
 
 #SET UP SAINTexpress
