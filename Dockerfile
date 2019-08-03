@@ -76,10 +76,10 @@ RUN curl -L https://github.com/OpenMS/OpenMS/releases/download/Release2.2.0/Open
 
     
 #Installing R packages and MSstats
-RUN touch /etc/bash_completion.d/R;cp /etc/bash_completion.d/R /usr/share/bash-completion/completions/R;apt-get update; apt-get install -f;apt-get -o Dpkg::Options::=--force-confnew --yes --force-yes install r-base-core r-base && \
+RUN touch /etc/bash_completion.d/R;cp /etc/bash_completion.d/R /usr/share/bash-completion/completions/R;apt-get update; apt-get install -f;apt-get -o Dpkg::Options::=--force-confnew --yes --force-yes install r-base-core r-base libcurl4-openssl-dev && \
     R -e "install.packages(c('gplots','lme4','ggplot2','ggrepel','reshape','reshape2','data.table','rjson','Rcpp','survival','minpack.lm','BiocManager'),repos='https://cran.rstudio.com/',dependencies=TRUE,ask=FALSE)" && \
     R -e "BiocManager::install(c('limma','marray','preprocessCore','MSnbase','devtools'),ask=FALSE)" && \
-    R -e "devtools::github_install(\"wohllab/MSstats\")"
+    R -e "devtools::install_github(\"wohllab/MSstats\")"
 #&& \
 #    wget "http://msstats.org/wp-content/uploads/2017/09/MSstats_3.9.2.tar.gz";R -e "install.packages('MSstats_3.9.2.tar.gz',type='source', repos=NULL)"; rm MSstats_3.9.2.tar.gz
 
