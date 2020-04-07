@@ -17,7 +17,7 @@ RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E03280
     #gpg --keyserver subkeys.pgp.net --recv-key 381BA480 && \
 
 RUN apt-get update --yes --force-yes && \
-    apt-get install -y --force-yes \
+    apt-get install --yes --force-yes \
     pigz \
     git \
     ed \
@@ -39,7 +39,9 @@ RUN apt-get update --yes --force-yes && \
     libtool \
     automake \
     software-properties-common \
-    curl
+    curl \
+    openjdk-8-jre-headless
+
 
 #Installing R packages and MSstats
 RUN touch /etc/bash_completion.d/R;cp /etc/bash_completion.d/R /usr/share/bash-completion/completions/R && apt-get update && apt-get install -f && \
@@ -81,9 +83,9 @@ RUN gpg --keyserver hkp://keyserver.ubuntu.com --recv-keys 409B6B1796C275462A170
 
 
 #scripts to handle galaxy supervisor paths and env values
-#ADD add_to_galaxy_path.py /galaxy-central/add_to_galaxy_path.py
+ADD add_to_galaxy_path.py /galaxy-central/add_to_galaxy_path.py
 #ADD add_to_galaxy_env.py /galaxy-central/add_to_galaxy_env.py
-#RUN python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /usr/local/rvm/rubies/ruby-2.5.1/bin/ /OpenMS-build/bin/ /home/galaxy/crux/bin/
+RUN python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /usr/local/rvm/rubies/ruby-2.5.1/bin/ /OpenMS-build/bin/ /home/galaxy/crux/bin/
 ENV PATH="/usr/local/rvm/rubies/ruby-2.5.1/bin/:/OpenMS-build/bin/:${PATH}"
 
 #installation of OpenMS 2.4.0.
@@ -123,7 +125,8 @@ RUN mkdir /crux/ && \
     curl https://noble.gs.washington.edu/crux-downloads/daily/crux-3.2.${BUILD}.Linux.x86_64.zip > crux-3.2.zip && \
     unzip crux-3.2.zip && rm crux-3.2.zip && mkdir bin/ && \
     mv crux-3.2.Linux.x86_64/bin/* bin/ && rm -rf crux-3.2.Linux.x86_64/ && \
-    cp /crux/bin/crux /bin/crux
+    cp /crux/bin/crux /bin/crux && \
+    python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /home/galaxy/crux/bin/
     #git config --global user.email "docker@localhost" && \
     #git config --global user.name "docker" && \
     #git clone https://github.com/crux-toolkit/crux-toolkit.git crux-toolkit && \
@@ -131,7 +134,6 @@ RUN mkdir /crux/ && \
     #cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:PATH=/crux/ && \
     #make && \
     #make install && \
-#    python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /home/galaxy/crux/bin/ && 
 
 ENV PATH="/crux/bin/:${PATH}" \
     LC_CTYPE=en_US.UTF-8
@@ -156,6 +158,7 @@ RUN mkdir /galaxy-central/tools/wohl-proteomics/ && \
 
 #NOWIN BRANCH IS ENABLED!!!
 RUN echo "The milkyway toolset was cloned auotmatically after a triggered pull from commit_rev-CI_job_ID on DATE-REPLACE"  && git clone https://github.com/wohllab/milkyway_proteomics.git --branch nowin && \
+    mv milkyway_proteomics/galaxy_milkyway_files/tool-data/msgfplus_mods.loc $GALAXY_ROOT/tool-data/msgfplus_mods.loc;mv milkyway_proteomics/galaxy_milkyway_files/tool-data/silac_mods.loc $GALAXY_ROOT/tool-data/silac_mods.loc && \
     apt-get update && \
     apt-get install rsync -y && \
     rsync -avzh milkyway_proteomics/galaxy_milkyway_files/tools/wohl-proteomics/ /galaxy-central/tools/wohl-proteomics/ && \
@@ -294,14 +297,15 @@ GALAXY_CONFIG_DIR=/etc/galaxy
 
 #CMD ["/usr/bin/startup"]
 
-########### These parameters from the 19.01 version of Galaxy's galaxy-htcondor-executor Dockerfile. (credit: Bgruening and team)
 ENV GALAXY_USER=galaxy \
 GALAXY_UID=1450 \
 GALAXY_GID=1450 \
 GALAXY_HOME=/home/galaxy \
 EXPORT_DIR=/export \
 LC_ALL=en_US.UTF-8 \
-LANG=en_US.UTF-8
+LANG=en_US.UTF-8 \
+GEM_HOME=/usr/local/rvm/gems/ruby-2.5.1 \
+GEM_PATH=""
 # Setting a standard encoding. This can get important for things like the unix sort tool.
 
 #ADD startup.sh /usr/bin/startup.sh
@@ -324,4 +328,5 @@ LANG=en_US.UTF-8
 #RUN chmod +x /usr/bin/startup.sh
 
 #CMD ["/usr/bin/startup.sh"]
+
 CMD ["/usr/bin/startup"]
