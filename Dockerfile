@@ -305,7 +305,7 @@ EXPORT_DIR=/export \
 LC_ALL=en_US.UTF-8 \
 LANG=en_US.UTF-8 \
 GEM_HOME=/usr/local/rvm/gems/ruby-2.5.1 \
-GEM_PATH=""
+GEM_PATH=/usr/local/rvm/gems/ruby-2.5.1
 # Setting a standard encoding. This can get important for things like the unix sort tool.
 
 #ADD startup.sh /usr/bin/startup.sh
