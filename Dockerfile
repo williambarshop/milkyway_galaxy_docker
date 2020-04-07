@@ -1,4 +1,5 @@
-FROM quay.io/bgruening/galaxy-htcondor-base:19.01
+FROM bgruening/galaxy-stable:latest
+#FROM quay.io/bgruening/galaxy-htcondor-base:latest
 
 MAINTAINER William Barshop, wbarshop@ucla.edu
 
@@ -9,7 +10,7 @@ RUN apt-get update --yes --force-yes && \
 
 #gpg --keyserver subkeys.pgp.net --recv-key 381BA480 && \
 RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF && \
-    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9 && \
+    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 51716619E084DAB9 && \
     echo "deb http://download.mono-project.com/repo/debian wheezy main" | tee /etc/apt/sources.list.d/mono-xamarin.list && \
     apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 76F1A20FF987672F && \
     sh -c 'echo "deb http://cran.rstudio.com/bin/linux/ubuntu bionic-cran35/" >> /etc/apt/sources.list'
@@ -55,19 +56,22 @@ RUN R -e "install.packages('BiocManager');BiocManager::install(c('limma','marray
 #Let's get cmake
 ENV CMAKE_ROOT=/cmake/cmake-3.13.4-Linux-x86_64/
 RUN cd / && mkdir cmake/ && cd cmake && \
-    wget https://github.com/Kitware/CMake/releases/download/v3.13.4/cmake-3.13.4-Linux-x86_64.tar.gz -O cmake.tar.gz && \
+    curl -sSL https://github.com/Kitware/CMake/releases/download/v3.13.4/cmake-3.13.4-Linux-x86_64.tar.gz > cmake.tar.gz && \
     tar xzvf cmake.tar.gz && \
     rm cmake.tar.gz && cd cmake-3.13.4-Linux-x86_64 && cp -r share/* /usr/share/ && cp bin/* /usr/bin/
 
-#Installing wine....
+#Installing wine.... and libfaudio
 #RUN mv /etc/apt/sources.list.d/htcondor.list temporary_file && \
 RUN dpkg --add-architecture i386 && \
-wget https://dl.winehq.org/wine-builds/Release.key && \
-apt-key add Release.key && \
-apt-add-repository https://dl.winehq.org/wine-builds/ubuntu/ && \
-apt-get update && \
-apt-get install --install-recommends winehq-stable -y --force-yes
-
+    curl -sSL https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_18.04/Release.key > Release.key && \
+    apt-key add Release.key && \
+    rm Release.key && \
+    sudo apt-add-repository 'deb https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_18.04/ ./' && \
+    curl -sSL https://dl.winehq.org/wine-builds/Release.key > Release.key && \
+    apt-key add Release.key && \
+    apt-add-repository 'deb https://dl.winehq.org/wine-builds/ubuntu/ bionic main' && \
+    apt update && \
+    apt install --install-recommends winehq-stable -y
 
 #Let's handle rvm and protk installation
 RUN gpg --keyserver hkp://keyserver.ubuntu.com --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB && \
@@ -84,7 +88,7 @@ ENV PATH="/usr/local/rvm/rubies/ruby-2.5.1/bin/:/OpenMS-build/bin/:${PATH}"
 
 #installation of OpenMS 2.4.0.
 RUN apt-get install build-essential autoconf patch libtool automake qtbase5-dev libqt5svg5-dev libeigen3-dev libxerces-c-dev libboost-all-dev libsvn-dev libbz2-dev -y --force-yes
-RUN mkdir /galaxy-central/ && mkdir /galaxy-central/tools/
+#RUN mkdir /galaxy-central/ && mkdir /galaxy-central/tools/
 #RUN curl -L https://github.com/OpenMS/OpenMS/releases/download/Release2.2.0/OpenMS-2.2.0-src.zip > OpenMS-2.2.0-src.zip && unzip OpenMS-2.2.0-src.zip && rm OpenMS-2.2.0-src.zip && mv archive/* . && rm -rf archive/ && cd OpenMS-2.2.0/ && mkdir contrib-build && cd contrib-build && \
 #RUN curl -L https://github.com/OpenMS/OpenMS/archive/Release2.4.0.zip > OpenMS-2.4.0-src.zip && unzip OpenMS-2.4.0-src.zip && rm OpenMS-2.4.0-src.zip
 
@@ -129,11 +133,11 @@ RUN mkdir /crux/ && \
     #make install && \
 #    python /galaxy-central/add_to_galaxy_path.py /etc/supervisor/conf.d/galaxy.conf /home/galaxy/crux/bin/ && 
 
-ENV PATH="/crux/bin/:${PATH}"
+ENV PATH="/crux/bin/:${PATH}" \
+    LC_CTYPE=en_US.UTF-8
 
 #SET UP BLIBBUILD
 #    svn checkout -r11856 https://svn.code.sf.net/p/proteowizard/code/trunk/pwiz proteowizard-code && \
-ENV LC_CTYPE=en_US.UTF-8
 RUN mkdir /galaxy-central/tools/wohl-proteomics/ && \
     mkdir /galaxy-central/tools/wohl-proteomics/ssl_converter/ && \
     svn checkout https://svn.code.sf.net/p/proteowizard/code/trunk/pwiz proteowizard-code && \
@@ -188,7 +192,7 @@ RUN curl -L http://ontologies.berkeleybop.org/ms.obo > /usr/local/lib/python2.7/
 
 #Let's set up DIA-Umpire
 #RUN cd /galaxy-central/tools/wohl-proteomics/diaumpire/ ; wget https://cytranet.dl.sourceforge.net/project/diaumpire/JAR%20executables/DIA-Umpire_v2_0.zip ; unzip DIA-Umpire_v2_0.zip ; rm DIA-Umpire_v2_0.zip ; ls ; sleep 600
-RUN cd /galaxy-central/tools/wohl-proteomics/diaumpire/ ; wget https://github.com/guoci/DIA-Umpire/releases/download/v2.1.3/v2.1.3.zip ; unzip v2.1.3.zip ; rm v2.1.3.zip
+RUN cd /galaxy-central/tools/wohl-proteomics/diaumpire/ ; curl -sSL https://github.com/guoci/DIA-Umpire/releases/download/v2.1.3/v2.1.3.zip > v2.1.3.zip ; unzip v2.1.3.zip ; rm v2.1.3.zip
 #RUN cd /galaxy-central/tools/wohl-proteomics/diaumpire/ ; wget https://github.com/Nesvilab/DIA-Umpire/releases/download/v2.1.2/v2.1.2.zip ; unzip v2.1.2.zip ; rm v2.1.2.zip
 
 
@@ -197,7 +201,7 @@ RUN cd /galaxy-central/tools/wohl-proteomics/diaumpire/ ; wget https://github.co
 
 
 #Let's get MSPLIT-DIA
-RUN cd /galaxy-central/tools/wohl-proteomics/msplit-dia/ ; wget http://proteomics.ucsd.edu/Software/MSPLIT-DIA/MSPLIT-DIAv1.0.zip; unzip MSPLIT-DIAv1.0.zip ; rm MSPLIT-DIAv1.0.zip ; mv MSPLIT-DIAv1.0/* . ; rm -rf MSPLIT-DIAv1.0
+RUN cd /galaxy-central/tools/wohl-proteomics/msplit-dia/ ; curl -sSL http://proteomics.ucsd.edu/Software/MSPLIT-DIA/MSPLIT-DIAv1.0.zip > MSPLIT-DIAv1.0.zip; unzip MSPLIT-DIAv1.0.zip ; rm MSPLIT-DIAv1.0.zip ; mv MSPLIT-DIAv1.0/* . ; rm -rf MSPLIT-DIAv1.0
 ADD MSPLIT-DIAv07192015.jar /galaxy-central/tools/wohl-proteomics/msplit-dia/
 
 #And while we're at it, we'll get Specter
@@ -215,7 +219,7 @@ ADD MSPLIT-DIAv07192015.jar /galaxy-central/tools/wohl-proteomics/msplit-dia/
 
 
 #SET UP SAINTexpress
-RUN wget https://downloads.sourceforge.net/project/saint-apms/SAINTexpress_v3.6.1__2015-05-03.zip;unzip SAINTexpress_v3.6.1__2015-05-03.zip -d /galaxy-central/tools/wohl-proteomics/SAINTexpress/;rm SAINTexpress_v3.6.1__2015-05-03.zip; cp /galaxy-central/tools/wohl-proteomics/SAINTexpress/SAINTexpress_v3.6.1__2015-05-03/Precompiled_binaries/Linux64/* /galaxy-central/tools/wohl-proteomics/SAINTexpress/; rm -rf /galaxy-central/tools/wohl-proteomics/SAINTexpress/SAINTexpress_v3.6.1__2015-05-03/
+RUN curl -sSL https://downloads.sourceforge.net/project/saint-apms/SAINTexpress_v3.6.1__2015-05-03.zip > SAINTexpress_v3.6.1__2015-05-03.zip && unzip SAINTexpress_v3.6.1__2015-05-03.zip -d /galaxy-central/tools/wohl-proteomics/SAINTexpress/;rm SAINTexpress_v3.6.1__2015-05-03.zip; cp /galaxy-central/tools/wohl-proteomics/SAINTexpress/SAINTexpress_v3.6.1__2015-05-03/Precompiled_binaries/Linux64/* /galaxy-central/tools/wohl-proteomics/SAINTexpress/; rm -rf /galaxy-central/tools/wohl-proteomics/SAINTexpress/SAINTexpress_v3.6.1__2015-05-03/
 
 
 #SET UP SAINTq
@@ -223,7 +227,7 @@ RUN curl -L http://sourceforge.net/projects/saint-apms/files/saintq_v0.0.4.tar.g
 
 
 #SET UP PERCOLATOR CONVERTERS
-RUN wget https://github.com/percolator/percolator/releases/download/rel-3-01/ubuntu64_release.tar.gz && tar xzvf ubuntu64_release.tar.gz && rm ubuntu64_release.tar.gz && dpkg -i percolator-converters-v3-01-linux-amd64.deb && dpkg -i elude-v3-01-linux-amd64.deb && apt-get install -f && rm percolator-converters-v3-01-linux-amd64.deb percolator-noxml-v3-01-linux-amd64.deb percolator-v3-01-linux-amd64.deb elude-v3-01-linux-amd64.deb
+RUN curl -sSL https://github.com/percolator/percolator/releases/download/rel-3-01/ubuntu64_release.tar.gz > ubuntu64_release.tar.gz && tar xzvf ubuntu64_release.tar.gz && rm ubuntu64_release.tar.gz && dpkg -i percolator-converters-v3-01-linux-amd64.deb && dpkg -i elude-v3-01-linux-amd64.deb && apt-get install -f && rm percolator-converters-v3-01-linux-amd64.deb percolator-noxml-v3-01-linux-amd64.deb percolator-v3-01-linux-amd64.deb elude-v3-01-linux-amd64.deb
 
 
 #We need to grab the phosphoRS dll file and unpack it...
@@ -238,45 +242,45 @@ RUN mkdir phosphotemp && cd phosphotemp && curl -L http://ms.imp.ac.at/index.php
 #RUN sed -i "s#        pattern = r\"(#        directory = directory.replace('\\\\\\\\','\\\\\\\\\\\\\\\\')\n        pattern = r\"(#g" /galaxy_venv/lib/python2.7/site-packages/pulsar/client/staging/up.py
 
 #Modify galaxy.ini to always cleanup...
-#RUN sed -i 's/#cleanup_job = always/cleanup_job = always/' /etc/galaxy/galaxy.yml
+RUN sed -i 's/#cleanup_job = always/cleanup_job = always/' /etc/galaxy/galaxy.yml
 
 #Gotta give this an absolute path nowadays...
 RUN sed -i "s#ruby#/usr/local/rvm/rubies/ruby-2.5.1/bin/ruby#" /usr/local/rvm/gems/ruby-2.5.1/gems/protk-1.4.2/lib/protk/galaxy_stager.rb
 
 #Let's install a few galaxy tools....
-#ADD proteomics_toolshed.yml $GALAXY_ROOT/proteomics_toolshed.yml
-#RUN cp /galaxy-central/config/dependency_resolvers_conf.xml.sample /galaxy-central/config/dependency_resolvers_conf.xml && \
-#    startup_lite && \
-#    sleep 25 && \
-#    install-tools $GALAXY_ROOT/proteomics_toolshed.yml
+ADD proteomics_toolshed.yml $GALAXY_ROOT/proteomics_toolshed.yml
+RUN cp /galaxy-central/config/dependency_resolvers_conf.xml.sample /galaxy-central/config/dependency_resolvers_conf.xml && \
+    startup_lite && \
+    sleep 25 && \
+    install-tools $GALAXY_ROOT/proteomics_toolshed.yml
 
-#COPY replace_workflow_id.py /galaxy-central/replace_workflow_id.py
-#COPY patch_msconvert.py /galaxy-central/patch_msconvert.py
-#RUN startup_lite && \
-#    sleep 60 && \
-#    pip install ephemeris && \
-#    python /galaxy-central/replace_workflow_id.py --apikey admin --galaxy_address 127.0.0.1:8080 --workflow_folder /galaxy-central/milkyway_proteomics/workflows/ --old_tool_string msconvert_win --job_conf $GALAXY_CONFIG_DIR/job_conf.xml && \
-#    python /galaxy-central/replace_workflow_id.py --apikey admin --galaxy_address 127.0.0.1:8080 --workflow_folder /galaxy-central/milkyway_proteomics/workflows/ --old_tool_string DecoyDatabase && \
-#    python /galaxy-central/patch_msconvert.py --apikey admin --galaxy_address 127.0.0.1:8080 --tool_string msconvert_win && \
-#    workflow-install --workflow_path /galaxy-central/milkyway_proteomics/workflows/ -g http://localhost:8080 -u admin@galaxy.org -p admin
+COPY replace_workflow_id.py /galaxy-central/replace_workflow_id.py
+COPY patch_msconvert.py /galaxy-central/patch_msconvert.py
+RUN startup_lite && \
+    sleep 60 && \
+    pip install ephemeris && \
+    python /galaxy-central/replace_workflow_id.py --apikey admin --galaxy_address 127.0.0.1:8080 --workflow_folder /galaxy-central/milkyway_proteomics/workflows/ --old_tool_string msconvert_win --job_conf $GALAXY_CONFIG_DIR/job_conf.xml && \
+    python /galaxy-central/replace_workflow_id.py --apikey admin --galaxy_address 127.0.0.1:8080 --workflow_folder /galaxy-central/milkyway_proteomics/workflows/ --old_tool_string DecoyDatabase && \
+    python /galaxy-central/patch_msconvert.py --apikey admin --galaxy_address 127.0.0.1:8080 --tool_string msconvert_win && \
+    workflow-install --workflow_path /galaxy-central/milkyway_proteomics/workflows/ -g http://localhost:8080 -u admin@galaxy.org -p admin
 
 #The second is the tool_conf xml
-#RUN cp milkyway_proteomics/galaxy_milkyway_files/config/job_conf.xml $GALAXY_CONFIG_DIR/job_conf.xml && \
-#    head -n -1 $GALAXY_ROOT/config/tool_conf.xml.sample > /home/galaxy/milkyway_tool_conf.xml; head -n -1 /home/galaxy/wohl_tool_conf.xml > /home/galaxy/wohl_tool_tmp.xml; sed -e "1d" /home/galaxy/wohl_tool_tmp.xml > /home/galaxy/wohl_tool_tmp_final.xml; cat /home/galaxy/wohl_tool_tmp_final.xml >> /home/galaxy/milkyway_tool_conf.xml; echo "</toolbox>" >> /home/galaxy/milkyway_tool_conf.xml; rm /home/galaxy/wohl_tool_tmp.xml; rm /home/galaxy/wohl_tool_tmp_final.xml
+RUN cp milkyway_proteomics/galaxy_milkyway_files/config/job_conf.xml $GALAXY_CONFIG_DIR/job_conf.xml && \
+    head -n -1 $GALAXY_ROOT/config/tool_conf.xml.sample > /home/galaxy/milkyway_tool_conf.xml; head -n -1 /home/galaxy/wohl_tool_conf.xml > /home/galaxy/wohl_tool_tmp.xml; sed -e "1d" /home/galaxy/wohl_tool_tmp.xml > /home/galaxy/wohl_tool_tmp_final.xml; cat /home/galaxy/wohl_tool_tmp_final.xml >> /home/galaxy/milkyway_tool_conf.xml; echo "</toolbox>" >> /home/galaxy/milkyway_tool_conf.xml; rm /home/galaxy/wohl_tool_tmp.xml; rm /home/galaxy/wohl_tool_tmp_final.xml
 
-#ADD welcome.html /etc/galaxy/web/welcome.html
+ADD welcome.html /etc/galaxy/web/welcome.html
 #Set up environment variables for galaxy docker...
-#ENV GALAXY_CONFIG_BRAND='MilkyWay' \
-#GALAXY_VIRTUAL_ENV=/galaxy_venv \
-#GALAXY_CONFIG_TOOL_CONFIG_FILE=/home/galaxy/milkyway_tool_conf.xml,$GALAXY_ROOT/config/shed_tool_conf.xml
-#l_no_container
-#GALAXY_DESTINATIONS_DEFAULT=local_no_container \
-#NONUSE=slurmd,slurmctld
-#GALAXY_HANDLER_NUMPROCS=4 \
-#UWSGI_PROCESSES=4 \
-#UWSGI_THREADS=2 \
-#GALAXY_ROOT=/galaxy-central \
-#GALAXY_CONFIG_DIR=/etc/galaxy \
+ENV GALAXY_CONFIG_BRAND='MilkyWay' \
+GALAXY_VIRTUAL_ENV=/galaxy_venv \
+GALAXY_CONFIG_TOOL_CONFIG_FILE=/home/galaxy/milkyway_tool_conf.xml,$GALAXY_ROOT/config/shed_tool_conf.xml \
+GALAXY_DESTINATIONS_DEFAULT=local_no_container \
+GALAXY_HANDLER_NUMPROCS=4 \
+UWSGI_PROCESSES=4 \
+UWSGI_THREADS=2 \
+GALAXY_ROOT=/galaxy-central \
+GALAXY_CONFIG_DIR=/etc/galaxy
+
+#NONUSE=slurmd,slurmctld \
 
 #VOLUME ["/export/","/data/","/var/lib/docker"]
 
@@ -293,27 +297,28 @@ GALAXY_UID=1450 \
 GALAXY_GID=1450 \
 GALAXY_HOME=/home/galaxy \
 EXPORT_DIR=/export \
-# Setting a standard encoding. This can get important for things like the unix sort tool.
 LC_ALL=en_US.UTF-8 \
 LANG=en_US.UTF-8
+# Setting a standard encoding. This can get important for things like the unix sort tool.
 
-ADD startup.sh /usr/bin/startup.sh
+#ADD startup.sh /usr/bin/startup.sh
 
-RUN mkdir -p /tmp/download && \
-    wget --no-check-certificate -qO - https://download.docker.com/linux/static/stable/x86_64/docker-17.06.2-ce.tgz | tar -xz -C /tmp/download && \
-    mv /tmp/download/docker/docker /usr/bin/ && \
-    rm -rf /tmp/download && \
-    rm -rf ~/.cache/ && \
-    groupadd -r $GALAXY_USER -g $GALAXY_GID && \
-    useradd -u $GALAXY_UID -r -g $GALAXY_USER -d $GALAXY_HOME -c "Galaxy user" $GALAXY_USER && \
-    groupadd --gid 999 docker && \
-    gpasswd -a $GALAXY_USER docker && \
-    adduser condor docker
+#RUN mkdir -p /tmp/download && \
+#    wget --no-check-certificate -qO - https://download.docker.com/linux/static/stable/x86_64/docker-17.06.2-ce.tgz | tar -xz -C /tmp/download && \
+#    mv /tmp/download/docker/docker /usr/bin/ && \
+#    rm -rf /tmp/download && \
+#    rm -rf ~/.cache/ && \
+#    groupadd -r $GALAXY_USER -g $GALAXY_GID && \
+#    useradd -u $GALAXY_UID -r -g $GALAXY_USER -d $GALAXY_HOME -c "Galaxy user" $GALAXY_USER && \
+#    groupadd --gid 999 docker && \
+#    gpasswd -a $GALAXY_USER docker && \
+#    adduser condor docker
 
-ENV CONDOR_CPUS=1 \
-    CONDOR_MEMORY=1024
+#ENV CONDOR_CPUS=1 \
+#    CONDOR_MEMORY=1024
 
-ADD startup.sh /usr/bin/startup.sh
-RUN chmod +x /usr/bin/startup.sh
+#ADD startup.sh /usr/bin/startup.sh
+#RUN chmod +x /usr/bin/startup.sh
 
-CMD ["/usr/bin/startup.sh"]
+#CMD ["/usr/bin/startup.sh"]
+CMD ["/usr/bin/startup"]
