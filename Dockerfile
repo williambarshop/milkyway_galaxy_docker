@@ -158,7 +158,8 @@ RUN mkdir /galaxy-central/tools/wohl-proteomics/ && \
 RUN echo "The milkyway toolset was cloned auotmatically after a triggered pull from commit_rev-CI_job_ID on DATE-REPLACE"  && git clone https://github.com/wohllab/milkyway_proteomics.git --branch nowin && \
     apt-get update && \
     apt-get install rsync -y && \
-    rsync -avzh milkyway_proteomics/galaxy_milkyway_files/tools/wohl-proteomics/ /galaxy-central/tools/wohl-proteomics/
+    rsync -avzh milkyway_proteomics/galaxy_milkyway_files/tools/wohl-proteomics/ /galaxy-central/tools/wohl-proteomics/ && \
+    mv milkyway_proteomics/galaxy_milkyway_files/config/wohl_tool_conf.xml /home/galaxy/wohl_tool_conf.xml
 
 
 #Now let's move all the tool data from our local machine into the docker image.

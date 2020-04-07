@@ -38,7 +38,7 @@ os.remove("msconvert_wrapper.py")
 
 new_file=[]
 for each_line in content.split("\n"):
-    if "cmd = \"msconvert --%s %s\" % (to_extension, to_params)" in each_line":
+    if "cmd = \"msconvert --%s %s\" % (to_extension, to_params)" in each_line:
         new_file.append(each_line.replace("msconvert","wine msconvert"))
         continue
     new_file.append(each_line)
