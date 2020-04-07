@@ -257,12 +257,14 @@ RUN cp /galaxy-central/config/dependency_resolvers_conf.xml.sample /galaxy-centr
 
 COPY replace_workflow_id.py /galaxy-central/replace_workflow_id.py
 COPY patch_msconvert.py /galaxy-central/patch_msconvert.py
+COPY patch_decoydatabase.py /galaxy-central/patch_decoydatabase.py
 RUN startup_lite && \
     sleep 60 && \
     pip install ephemeris && \
     python /galaxy-central/replace_workflow_id.py --apikey admin --galaxy_address 127.0.0.1:8080 --workflow_folder /galaxy-central/milkyway_proteomics/workflows/ --old_tool_string msconvert_win --job_conf $GALAXY_CONFIG_DIR/job_conf.xml && \
     python /galaxy-central/replace_workflow_id.py --apikey admin --galaxy_address 127.0.0.1:8080 --workflow_folder /galaxy-central/milkyway_proteomics/workflows/ --old_tool_string DecoyDatabase && \
     python /galaxy-central/patch_msconvert.py --apikey admin --galaxy_address 127.0.0.1:8080 --tool_string msconvert_win && \
+    python /galaxy-central/patch_decoydatabase.py --apikey admin --galaxy_address 127.0.0.1:8080 --tool_string openms_decoydatabase && \
     workflow-install --workflow_path /galaxy-central/milkyway_proteomics/workflows/ -g http://localhost:8080 -u admin@galaxy.org -p admin
 
 #The second is the tool_conf xml
