@@ -48,7 +48,7 @@ tools:
 - name: openms_decoydatabase
   owner: galaxyp
   tool_panel_section_label: "Galaxy-Proteomics"
-  revision: 8ced1ef014ae
+  revision: 1742dc757444
   tool_shed_url: https://toolshed.g2.bx.psu.edu
 
 - name: proteomics_datatypes
