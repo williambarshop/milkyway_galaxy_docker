@@ -40,7 +40,9 @@ RUN apt-get update --yes --force-yes && \
     automake \
     software-properties-common \
     curl \
-    openjdk-8-jre-headless
+    openjdk-8-jre-headless \
+    gcc \
+    g++
 
 
 #Installing R packages and MSstats
@@ -174,8 +176,7 @@ RUN echo "The milkyway toolset was cloned auotmatically after a triggered pull f
 #and installing python packages...
 
 #INSTALL SOME PYTHON PACKAGES INTO VENV
-RUN apt-get install gcc g++ python-pip --yes && \
-    . "$GALAXY_VIRTUAL_ENV/bin/activate" && \
+RUN . "$GALAXY_VIRTUAL_ENV/bin/activate" && \
     pip install cython && \
     pip install https://pypi.python.org/packages/de/db/7df2929ee9fad94aa9e57071bbca246a42069c0307305e00ce3f2c5e0c1d/pyopenms-2.1.0-cp27-none-manylinux1_x86_64.whl#md5=3c886f9bb4a2569c0d3c8fe29fbff5e1 && \
     pip install numpy==1.13.0 uniprot_tools h5py==2.7.0 ephemeris futures tqdm joblib multiprocessing pandas argparse pyteomics==3.2 natsort tqdm biopython lxml plotly -U && \
