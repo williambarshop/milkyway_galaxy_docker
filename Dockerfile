@@ -333,7 +333,6 @@ GEM_PATH=/usr/local/rvm/gems/ruby-2.5.1
 #RUN chmod +x /usr/bin/startup.sh
 
 #CMD ["/usr/bin/startup.sh"]
-
-CMD ["cp -n milkyway_proteomics/galaxy_milkyway_files/tool-data/msgfplus_mods.loc $GALAXY_ROOT/tool-data/msgfplus_mods.loc && \
-    cp -n milkyway_proteomics/galaxy_milkyway_files/tool-data/silac_mods.loc $GALAXY_ROOT/tool-data/silac_mods.loc && \
-    /usr/bin/startup"]
+RUN cp -n milkyway_proteomics/galaxy_milkyway_files/tool-data/msgfplus_mods.loc $GALAXY_ROOT/tool-data/msgfplus_mods.loc && \
+    cp -n milkyway_proteomics/galaxy_milkyway_files/tool-data/silac_mods.loc $GALAXY_ROOT/tool-data/silac_mods.loc
+CMD ["/usr/bin/startup"]
