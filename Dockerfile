@@ -158,7 +158,6 @@ RUN mkdir /galaxy-central/tools/wohl-proteomics/ && \
 
 #NOWIN BRANCH IS ENABLED!!!
 RUN echo "The milkyway toolset was cloned auotmatically after a triggered pull from commit_rev-CI_job_ID on DATE-REPLACE"  && git clone https://github.com/wohllab/milkyway_proteomics.git --branch nowin && \
-    mv milkyway_proteomics/galaxy_milkyway_files/tool-data/msgfplus_mods.loc $GALAXY_ROOT/tool-data/msgfplus_mods.loc;mv milkyway_proteomics/galaxy_milkyway_files/tool-data/silac_mods.loc $GALAXY_ROOT/tool-data/silac_mods.loc && \
     apt-get update && \
     apt-get install rsync -y && \
     rsync -avzh milkyway_proteomics/galaxy_milkyway_files/tools/wohl-proteomics/ /galaxy-central/tools/wohl-proteomics/ && \
@@ -274,6 +273,12 @@ RUN startup_lite && \
 RUN cp milkyway_proteomics/galaxy_milkyway_files/config/job_conf.xml $GALAXY_CONFIG_DIR/job_conf.xml && \
     head -n -1 $GALAXY_ROOT/config/tool_conf.xml.sample > /home/galaxy/milkyway_tool_conf.xml; head -n -1 /home/galaxy/wohl_tool_conf.xml > /home/galaxy/wohl_tool_tmp.xml; sed -e "1d" /home/galaxy/wohl_tool_tmp.xml > /home/galaxy/wohl_tool_tmp_final.xml; cat /home/galaxy/wohl_tool_tmp_final.xml >> /home/galaxy/milkyway_tool_conf.xml; echo "</toolbox>" >> /home/galaxy/milkyway_tool_conf.xml; rm /home/galaxy/wohl_tool_tmp.xml; rm /home/galaxy/wohl_tool_tmp_final.xml
 
+#Position the loc files for msgf+ and reading mods
+RUN cp milkyway_proteomics/galaxy_milkyway_files/tool-data/msgfplus_mods.loc $GALAXY_ROOT/tool-data/msgfplus_mods.loc && \
+    cp milkyway_proteomics/galaxy_milkyway_files/tool-data/silac_mods.loc $GALAXY_ROOT/tool-data/silac_mods.loc
+
+
+
 ADD welcome.html /etc/galaxy/web/welcome.html
 #Set up environment variables for galaxy docker...
 ENV GALAXY_CONFIG_BRAND='MilkyWay' \
@@ -329,4 +334,6 @@ GEM_PATH=/usr/local/rvm/gems/ruby-2.5.1
 
 #CMD ["/usr/bin/startup.sh"]
 
-CMD ["/usr/bin/startup"]
+CMD ["cp -n milkyway_proteomics/galaxy_milkyway_files/tool-data/msgfplus_mods.loc $GALAXY_ROOT/tool-data/msgfplus_mods.loc && \
+    cp -n milkyway_proteomics/galaxy_milkyway_files/tool-data/silac_mods.loc $GALAXY_ROOT/tool-data/silac_mods.loc && \
+    /usr/bin/startup"]
