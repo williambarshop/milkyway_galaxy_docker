@@ -263,7 +263,8 @@ COPY replace_workflow_id.py /galaxy-central/replace_workflow_id.py
 COPY patch_msconvert.py /galaxy-central/patch_msconvert.py
 COPY patch_decoydatabase.py /galaxy-central/patch_decoydatabase.py
 RUN startup_lite && \
-    sleep 60 && \
+    sleep 30 && \
+    . "$GALAXY_VIRTUAL_ENV/bin/activate" && \
     pip install ephemeris && \
     python /galaxy-central/replace_workflow_id.py --apikey admin --galaxy_address 127.0.0.1:8080 --workflow_folder /galaxy-central/milkyway_proteomics/workflows/ --old_tool_string msconvert_win --job_conf $GALAXY_CONFIG_DIR/job_conf.xml && \
     python /galaxy-central/replace_workflow_id.py --apikey admin --galaxy_address 127.0.0.1:8080 --workflow_folder /galaxy-central/milkyway_proteomics/workflows/ --old_tool_string DecoyDatabase && \
