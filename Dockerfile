@@ -1,4 +1,4 @@
-FROM bgruening/galaxy-stable:latest
+FROM bgruening/galaxy-stable:19.09
 #FROM quay.io/bgruening/galaxy-htcondor-base:latest
 
 MAINTAINER William Barshop, wbarshop@ucla.edu
